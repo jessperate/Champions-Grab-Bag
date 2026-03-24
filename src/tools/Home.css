@@ -1,6 +1,6 @@
 .home {
   flex: 1;
-  background: #f8fffb;
+  background: #dfeae3 url('/ChampionLandingBg.png') center center / cover no-repeat;
   overflow-y: auto;
   display: flex;
   align-items: center;
