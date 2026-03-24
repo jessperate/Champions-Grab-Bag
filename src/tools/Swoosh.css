@@ -1,0 +1,186 @@
+.swoosh-page {
+  flex: 1;
+  background: #f8fffb;
+  overflow-y: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 48px 24px;
+}
+
+.swoosh-inner {
+  max-width: 800px;
+  width: 100%;
+}
+
+.swoosh-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.swoosh-title {
+  font-family: 'Serrif VF', Georgia, serif;
+  font-size: 48px;
+  font-weight: 400;
+  color: #000d05;
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+}
+
+.swoosh-subtitle {
+  font-family: 'Saans', sans-serif;
+  font-size: 18px;
+  color: #676c79;
+  max-width: 480px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+.swoosh-section-label {
+  font-family: 'Saans Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #676c79;
+  margin-bottom: 12px;
+}
+
+.swoosh-size-section {
+  margin-bottom: 40px;
+}
+
+.swoosh-size-grid {
+  display: flex;
+  gap: 8px;
+}
+
+.swoosh-size-btn {
+  padding: 10px 20px;
+  border: 1px solid #d4e8da;
+  background: #fff;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.swoosh-size-btn:hover { border-color: #008c44; }
+.swoosh-size-btn.active { border-color: #008c44; background: #f0faf4; }
+
+.swoosh-size-dims {
+  font-family: 'Saans Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: #000d05;
+  display: block;
+}
+
+.swoosh-size-sub {
+  font-family: 'Saans Mono', monospace;
+  font-size: 10px;
+  color: #008c44;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: block;
+}
+
+/* ── Variant grid */
+.swoosh-variants {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 48px;
+}
+
+.swoosh-variant {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.swoosh-variant-label {
+  font-family: 'Saans Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #676c79;
+}
+
+.swoosh-canvas-wrap {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.swoosh-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.swoosh-download-btn {
+  width: 100%;
+  padding: 10px;
+  background: #000d05;
+  color: #fff;
+  border: none;
+  font-family: 'Saans Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.swoosh-download-btn:hover { background: #002910; }
+.swoosh-download-btn:disabled { opacity: 0.5; pointer-events: none; }
+
+/* ── Instructions */
+.swoosh-instructions {
+  background: #fff;
+  border: 1px solid #d4e8da;
+  padding: 24px;
+}
+
+.swoosh-steps {
+  list-style: none;
+  counter-reset: steps;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.swoosh-steps li {
+  counter-increment: steps;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-family: 'Saans', sans-serif;
+  font-size: 14px;
+  color: #141414;
+  line-height: 1.5;
+}
+
+.swoosh-steps li::before {
+  content: counter(steps);
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  background: #008c44;
+  color: #fff;
+  font-family: 'Saans Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}

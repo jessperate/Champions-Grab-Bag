@@ -1,0 +1,468 @@
+/* ── Sidebar shell */
+.sidebar {
+  width: 288px;
+  min-width: 288px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); }
+
+/* ── Header */
+.sidebar-header {
+  padding: 12px 16px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar-logo {
+  height: 24px;
+  width: auto;
+  display: block;
+  color: var(--logo);
+}
+
+.sidebar-gtmgen {
+  display: block;
+  height: 25px;
+  width: 155px;
+  background-color: var(--logo);
+  -webkit-mask-image: url('/AirOpsLogo.svg');
+  mask-image: url('/AirOpsLogo.svg');
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+/* ── Body */
+.sidebar-body {
+  padding: 12px 16px 16px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* ── Section label */
+.sec {
+  font-family: 'Saans Mono', 'DM Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--label);
+  margin: 14px 0 6px;
+}
+.sec:first-child { margin-top: 0; }
+
+/* ── Divider */
+.div {
+  height: 1px;
+  background: var(--border);
+  margin: 12px 0;
+}
+
+/* ── Field */
+.field { margin-bottom: 8px; }
+
+.field label {
+  display: block;
+  font-family: 'Saans Mono', 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  margin-bottom: 3px;
+  text-transform: uppercase;
+}
+
+.field input[type="text"],
+.field textarea {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'Saans', sans-serif;
+  font-size: 12px;
+  padding: 7px 9px;
+  outline: none;
+  border-radius: 0;
+  resize: none;
+  transition: border-color .15s;
+}
+
+.field input:focus,
+.field textarea:focus {
+  border-color: var(--accent);
+}
+
+.field textarea {
+  min-height: 72px;
+  line-height: 1.5;
+}
+
+/* ── Asset type picker */
+.asset-picker {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+  scroll-snap-type: x mandatory;
+}
+.asset-picker::-webkit-scrollbar { display: none; }
+
+.asset-card {
+  flex: 0 0 72px;
+  scroll-snap-align: start;
+  background: transparent;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  overflow: hidden;
+  transition: border-color .15s;
+}
+.asset-card:hover {
+  border-color: var(--hover-bd);
+}
+.asset-card.active {
+  border-color: var(--accent);
+  background: rgba(0,255,100,.04);
+}
+
+.asset-card-img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: var(--input-bg);
+}
+.asset-card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform .25s ease, filter .25s;
+  filter: brightness(0.88);
+}
+.asset-card:hover .asset-card-img img,
+.asset-card.active .asset-card-img img {
+  filter: brightness(1);
+}
+.asset-card:hover .asset-card-img img {
+  transform: scale(1.05);
+}
+
+.asset-card-name {
+  font-family: 'Saans Mono', 'DM Mono', monospace;
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 5px 4px 6px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color .15s;
+}
+.asset-card.active .asset-card-name {
+  color: var(--accent);
+}
+
+/* ── Color mode grid */
+.mode-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+}
+.mode-grid-wide {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.mode-btn {
+  padding: 7px 4px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  border-radius: 0;
+  font-family: 'Saans Mono', 'DM Mono', monospace;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+  transition: border-color .15s;
+  line-height: 1.4;
+}
+.mode-btn:hover { border-color: var(--hover-bd); }
+.mode-btn.active { border-color: var(--accent) !important; }
+.mode-green        { background: #f8fffb; color: #000d05; }
+.mode-pink         { background: #fff7ff; color: #3a092c; }
+.mode-yellow       { background: #fdfff3; color: #0c0d01; }
+.mode-blue         { background: #f5f6ff; color: #02020c; }
+.mode-dark-green   { background: #0f2412; color: #e8f5ee; }
+.mode-dark-pink    { background: #230a1e; color: #f5e8f2; }
+.mode-dark-yellow  { background: #1c1d03; color: #f5f5e0; }
+.mode-dark-blue    { background: #0f0f5a; color: #e5e5ff; }
+/* I Joined colour variants */
+.mode-ij-night     { background: #000d05; color: #ffffff; }
+.mode-ij-forest    { background: #002910; color: #ffffff; }
+.mode-ij-green     { background: #008c44; color: #ffffff; }
+.mode-ij-mint      { background: #dfeae3; color: #002910; }
+.mode-ij-paper     { background: #f8fffb; color: #002910; }
+
+/* ── Dimensions grid */
+.dim-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.dim-btn {
+  padding: 7px 4px;
+  border: 1px solid var(--border);
+  background: var(--input-bg);
+  color: var(--text);
+  cursor: pointer;
+  font-family: 'Saans Mono', 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: .04em;
+  border-radius: 0;
+  text-align: center;
+  line-height: 1.5;
+  transition: all .15s;
+}
+.dim-btn:hover { border-color: var(--hover-bd); }
+.dim-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(0,255,100,.04); }
+
+.dim-sub {
+  font-size: 8px;
+  opacity: .4;
+  display: block;
+}
+
+/* ── Toggle row */
+.tog-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.tog-row > label:first-child {
+  display: block;
+  font-family: 'Saans Mono', 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 0;
+}
+
+.toggle {
+  position: relative;
+  width: 34px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.toggle input { opacity: 0; width: 0; height: 0; }
+
+.ttrack {
+  position: absolute;
+  inset: 0;
+  background: var(--toggle-inactive, var(--input-bg));
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background .2s;
+}
+.toggle input:checked + .ttrack {
+  background: var(--toggle-active);
+  border-color: var(--toggle-active);
+}
+
+.tthumb {
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 12px; height: 12px;
+  background: var(--text);
+  border-radius: 50%;
+  transition: transform .2s;
+  pointer-events: none;
+}
+.toggle input:checked ~ .tthumb { transform: translateX(16px); }
+
+/* ── Export buttons */
+.btn-ex {
+  width: 100%;
+  background: #00ff64;
+  color: #060e07;
+  border: none;
+  padding: 11px;
+  font-family: 'Saans', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 0;
+  margin-bottom: 5px;
+  transition: background .15s;
+}
+.btn-ex:hover { background: #00dc55; }
+
+.btn-all {
+  width: 100%;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 8px;
+  font-family: 'Saans Mono', 'DM Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 0;
+  transition: all .15s;
+}
+.btn-all:hover { border-color: var(--hover-bd); }
+
+/* ── Metrics 3-column grid */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+}
+.metrics-grid .field { margin-bottom: 0; }
+
+/* ── Profile photo upload button */
+.btn-upload {
+  width: 100%;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 8px;
+  font-family: 'Saans Mono', 'DM Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 0;
+  margin-bottom: 5px;
+  transition: all .15s;
+}
+.btn-upload:hover { border-color: var(--hover-bd); }
+
+/* ── Remove photo link */
+.btn-clear-photo {
+  width: 100%;
+  background: transparent;
+  color: var(--text-dim);
+  border: none;
+  padding: 3px 0 6px;
+  font-family: 'Saans Mono', 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  text-align: left;
+  transition: color .15s;
+}
+.btn-clear-photo:hover { color: var(--text); }
+
+/* ── Batch export hint */
+.batch-hint {
+  font-family: 'Saans Mono', 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  line-height: 1.6;
+  margin: 0 0 8px;
+}
+
+/* ── CSV drag-and-drop zone */
+.csv-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 1px dashed var(--border);
+  padding: 44px 10px;
+  cursor: pointer;
+  margin-bottom: 8px;
+  transition: border-color .15s, background .15s;
+}
+.csv-dropzone:hover,
+.csv-dropzone.over {
+  border-color: var(--accent);
+  background: rgba(0,255,100,.04);
+}
+.csv-dropzone-icon {
+  font-size: 16px;
+  color: var(--text-dim);
+  line-height: 1;
+  transition: color .15s;
+}
+.csv-dropzone-label {
+  font-family: 'Saans Mono', 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-align: center;
+  transition: color .15s;
+}
+.csv-dropzone:hover .csv-dropzone-icon,
+.csv-dropzone:hover .csv-dropzone-label,
+.csv-dropzone.over .csv-dropzone-icon,
+.csv-dropzone.over .csv-dropzone-label {
+  color: var(--accent);
+}
+
+/* ── Collapsible section header (Manual Input) */
+.sec-collapse {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--border);
+  color: var(--label);
+  font-family: 'Saans Mono', 'DM Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 10px 0 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  transition: color .15s;
+}
+.sec-collapse:hover { color: var(--text); }
+.sec-collapse-chevron { font-size: 14px; opacity: .6; }
+
+/* ── Footer (theme toggle) */
+.sidebar-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar-footer .tog-row {
+  width: 100%;
+  margin-bottom: 0;
+}

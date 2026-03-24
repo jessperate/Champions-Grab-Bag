@@ -1,0 +1,253 @@
+.headshot-page {
+  flex: 1;
+  background: #f8fffb;
+  overflow-y: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 48px 24px;
+}
+
+.headshot-inner {
+  max-width: 960px;
+  width: 100%;
+}
+
+.headshot-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.headshot-title {
+  font-family: 'Serrif VF', Georgia, serif;
+  font-size: 48px;
+  font-weight: 400;
+  color: #000d05;
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+}
+
+.headshot-subtitle {
+  font-family: 'Saans', sans-serif;
+  font-size: 18px;
+  color: #676c79;
+}
+
+/* ── Upload zone */
+.headshot-dropzone {
+  border: 2px dashed #d4e8da;
+  padding: 80px 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+}
+
+.headshot-dropzone:hover,
+.headshot-dropzone.over {
+  border-color: #008c44;
+  background: #f0faf4;
+}
+
+.headshot-dropzone-icon {
+  font-size: 32px;
+  color: #008c44;
+  line-height: 1;
+}
+
+.headshot-dropzone-label {
+  font-family: 'Saans', sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  color: #000d05;
+}
+
+.headshot-dropzone-sub {
+  font-family: 'Saans Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #a5aab6;
+}
+
+/* ── Comparison layout */
+.headshot-comparison {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.headshot-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.headshot-panel-label {
+  font-family: 'Saans Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #676c79;
+}
+
+.headshot-panel-img-wrap {
+  aspect-ratio: 1 / 1;
+  background: #ecedef;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.headshot-panel-img-wrap.loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(248, 255, 251, 0.7);
+}
+
+.headshot-panel-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.headshot-arrow {
+  flex-shrink: 0;
+  font-size: 32px;
+  color: #d4e8da;
+  margin-top: 80px;
+}
+
+.headshot-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 24px;
+}
+
+.headshot-placeholder span {
+  font-family: 'Saans', sans-serif;
+  font-size: 14px;
+  color: #a5aab6;
+  text-align: center;
+  line-height: 1.6;
+}
+
+.headshot-generating {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  height: 100%;
+}
+
+.headshot-generating span {
+  font-family: 'Saans Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #676c79;
+}
+
+.headshot-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #d4e8da;
+  border-top-color: #008c44;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Buttons */
+.headshot-actions {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.headshot-btn-generate {
+  background: #00ff64;
+  color: #060e07;
+  border: none;
+  padding: 14px 40px;
+  font-family: 'Saans', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.headshot-btn-generate:hover { background: #00dc55; }
+.headshot-btn-generate:disabled { opacity: 0.5; pointer-events: none; }
+
+.headshot-btn-primary {
+  background: #000d05;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  font-family: 'Saans Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s;
+  width: 100%;
+}
+
+.headshot-btn-primary:hover { background: #002910; }
+
+.headshot-btn-secondary {
+  background: transparent;
+  color: #676c79;
+  border: 1px solid #d4e8da;
+  padding: 8px 16px;
+  font-family: 'Saans Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+  width: 100%;
+}
+
+.headshot-btn-secondary:hover { border-color: #676c79; color: #000d05; }
+
+/* ── Error + tip */
+.headshot-error {
+  background: #fff0f0;
+  border: 1px solid #f08080;
+  padding: 12px 16px;
+  font-family: 'Saans Mono', monospace;
+  font-size: 11px;
+  color: #c00;
+  margin-bottom: 16px;
+}
+
+.headshot-tip {
+  text-align: center;
+  font-family: 'Saans', sans-serif;
+  font-size: 13px;
+  color: #676c79;
+  margin-top: 8px;
+}

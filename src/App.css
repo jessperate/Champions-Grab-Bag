@@ -1,0 +1,127 @@
+/* ── App shell */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: #f4f4f4;
+  color: #141414;
+}
+
+/* ── Top nav */
+.app-nav {
+  height: 48px;
+  background: #fff;
+  border-bottom: 1px solid #d4e8da;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 24px;
+  flex-shrink: 0;
+  z-index: 100;
+}
+
+.app-nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.app-nav-logo img {
+  display: block;
+  color: #002910;
+}
+
+.app-nav-title {
+  font-family: 'Saans Mono', 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #002910;
+  white-space: nowrap;
+}
+
+.app-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.app-nav-link {
+  font-family: 'Saans Mono', 'DM Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #676c79;
+  text-decoration: none;
+  padding: 6px 12px;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.app-nav-link:hover {
+  color: #002910;
+}
+
+.app-nav-link.active {
+  color: #002910;
+  border-bottom-color: #008c44;
+}
+
+/* ── Content area */
+.app-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  min-height: 0;
+}
+
+/* ── Tool layout (sidebar + canvas, reused for Assets and ChampionPost) */
+.app {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+
+  /* Light mode */
+  --bg:        #f4f4f4;
+  --surface:   #ffffff;
+  --border:    #c8c8c8;
+  --text:      #141414;
+  --text-dim:  #6b6b6b;
+  --label:     #444444;
+  --hover-bd:  #999999;
+  --input-bg:  #ffffff;
+  --logo:      #141414;
+  --accent:        #006b28;
+  --accent-hv:     #005220;
+  --toggle-active:   #dfeae3;
+  --toggle-inactive: #ffffff;
+  --dot:       rgba(0,0,0,0.07);
+
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Dark mode variant for the Assets tool */
+.app.dark {
+  --bg:        #060e07;
+  --surface:   #0d1a10;
+  --border:    #1f4030;
+  --text:      #f0f5f2;
+  --text-dim:  #8db49a;
+  --label:     #45c06a;
+  --hover-bd:  #356045;
+  --input-bg:  rgba(0,0,0,0.28);
+  --logo:      #00ff64;
+  --accent:        #00ff64;
+  --accent-hv:     #00dc55;
+  --toggle-active:   #000d05;
+  --toggle-inactive: #002910;
+  --dot:       rgba(255,255,255,0.07);
+}

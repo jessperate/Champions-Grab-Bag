@@ -1,0 +1,94 @@
+.home {
+  flex: 1;
+  background: #f8fffb;
+  overflow-y: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+}
+
+.home-inner {
+  max-width: 880px;
+  width: 100%;
+}
+
+.home-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.home-logo {
+  height: 28px;
+  width: auto;
+  display: block;
+  margin: 0 auto 20px;
+}
+
+.home-title {
+  font-family: 'Serrif VF', Georgia, serif;
+  font-size: 52px;
+  font-weight: 400;
+  color: #000d05;
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+  line-height: 1.1;
+}
+
+.home-subtitle {
+  font-family: 'Saans', sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  color: #676c79;
+}
+
+.home-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 720px) {
+  .home-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.home-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 28px 24px;
+  background: #fff;
+  border: 1px solid #d4e8da;
+  text-decoration: none;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  cursor: pointer;
+}
+
+.home-card:hover {
+  border-color: #008c44;
+  box-shadow: 0 4px 16px rgba(0, 140, 68, 0.1);
+  transform: translateY(-2px);
+}
+
+.home-card-icon {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.home-card-name {
+  font-family: 'Saans', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #000d05;
+  letter-spacing: -0.01em;
+}
+
+.home-card-desc {
+  font-family: 'Saans', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  color: #676c79;
+  line-height: 1.5;
+}
