@@ -10,7 +10,6 @@ const DEFAULT_SETTINGS = {
   lastName:       'Hoyle',
   roleCompany:    'Senior Content Engineer, Carta',
   championQuote:  '\u201CContent engineering changed the trajectory of my career.\u201D',
-  champMoreLink:  '',
   champColorMode: 'paper-light',
   champFlip:      false,
   dims:           { w: 1920, h: 1080 },
@@ -32,7 +31,9 @@ export default function ChampionPost() {
   const [fontsReady, setFontsReady] = useState(false)
   const profileImageRef             = useRef(null)
   const photoBgImageRef             = useRef(null)
+  const companyLogoRef              = useRef(null)
   const photoInputRef               = useRef(null)
+  const logoInputRef                = useRef(null)
 
   useEffect(() => {
     loadFonts().then(() => setFontsReady(true)).catch(() => {})
@@ -56,8 +57,15 @@ export default function ChampionPost() {
     img.src = dataUrl
   }, [update])
 
+  const handleLogoChange = useCallback((dataUrl) => {
+    if (!dataUrl) { companyLogoRef.current = null; update('champCompanyLogo', null); return }
+    const img = new Image()
+    img.onload = () => { companyLogoRef.current = img; update('champCompanyLogo', dataUrl) }
+    img.src = dataUrl
+  }, [update])
+
   const draw = useCallback((canvas, s) => {
-    drawChampionPostCanvas(canvas, s, fontsReady, profileImageRef.current, photoBgImageRef.current)
+    drawChampionPostCanvas(canvas, s, fontsReady, profileImageRef.current, photoBgImageRef.current, companyLogoRef.current)
   }, [fontsReady])
 
   const exportJpeg = useCallback(() => {
@@ -114,16 +122,6 @@ export default function ChampionPost() {
             />
           </div>
 
-          <div className="field">
-            <label>More Link (optional)</label>
-            <input
-              type="text"
-              placeholder="e.g. airops.com/champions"
-              value={settings.champMoreLink}
-              onChange={e => update('champMoreLink', e.target.value)}
-            />
-          </div>
-
           <div className="div" />
 
           {/* Photo */}
@@ -150,6 +148,37 @@ export default function ChampionPost() {
             {settings.champProfileImage && (
               <button className="btn-clear-photo" onClick={() => handlePhotoChange(null)}>
                 ✕ Remove photo
+              </button>
+            )}
+          </div>
+
+          <div className="div" />
+
+          {/* Company Logo */}
+          <div className="sec">Company Logo</div>
+
+          <div className="field">
+            <label>Logo (SVG, PNG — dark/black version)</label>
+            <input
+              ref={logoInputRef}
+              type="file"
+              accept="image/svg+xml,image/png,image/*"
+              style={{ display: 'none' }}
+              onChange={e => {
+                const file = e.target.files?.[0]
+                if (!file) return
+                const reader = new FileReader()
+                reader.onload = ev => handleLogoChange(ev.target.result)
+                reader.readAsDataURL(file)
+                e.target.value = ''
+              }}
+            />
+            <button className="btn-upload" onClick={() => logoInputRef.current?.click()}>
+              {settings.champCompanyLogo ? '↺ Replace Logo' : '↑ Upload Logo'}
+            </button>
+            {settings.champCompanyLogo && (
+              <button className="btn-clear-photo" onClick={() => handleLogoChange(null)}>
+                ✕ Remove logo
               </button>
             )}
           </div>

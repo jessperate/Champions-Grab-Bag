@@ -75,13 +75,12 @@ function drawPhotoSide(ctx, x, y, w, h, profileImage, photoBgImage, M) {
 }
 
 // ── Text side
-function drawTextSide(ctx, x, y, w, h, settings, M, scale, fontsReady) {
+function drawTextSide(ctx, x, y, w, h, settings, M, scale, fontsReady, companyLogoImage) {
   const {
     firstName     = 'Lucy',
     lastName      = 'Hoyle',
     roleCompany   = 'Senior Content Engineer, Carta',
     championQuote = '"Content engineering changed the trajectory of my career."',
-    champMoreLink = '',
   } = settings
 
   const serif = fontsReady ? "'Serrif VF', Georgia, serif"        : 'Georgia, serif'
@@ -141,12 +140,13 @@ function drawTextSide(ctx, x, y, w, h, settings, M, scale, fontsReady) {
   const quoteY = labelY + labelSz * 1.3 + Math.round(16 * scale)
 
   // 7. Quote text — Serrif VF 400, ~52px, -1% tracking, line-height 1.15
+  // Reserve space at bottom for logo if present
+  const logoReserve = companyLogoImage ? Math.round(80 * scale) : 0
   const quoteSzBase = Math.round(52 * scale)
-  const quoteMaxH   = h - (quoteY - y) - pad - Math.round(48 * scale)
+  const quoteMaxH   = h - (quoteY - y) - pad - logoReserve - Math.round(24 * scale)
 
   let qFont = quoteSzBase
   let qLines
-  ctx.letterSpacing = `${(-quoteSzBase * 0.01).toFixed(2)}px`
   for (let f = quoteSzBase; f >= Math.round(24 * scale); f -= 1) {
     ctx.font = `400 ${f}px ${serif}`
     ctx.letterSpacing = `${(-f * 0.01).toFixed(2)}px`
@@ -164,24 +164,23 @@ function drawTextSide(ctx, x, y, w, h, settings, M, scale, fontsReady) {
   })
   ctx.letterSpacing = '0px'
 
-  // 8. "More from [firstName] ↑" — bottom-aligned
-  if (champMoreLink !== undefined) {
-    const moreSz = Math.round(24 * scale)
-    const moreY  = y + h - pad - moreSz
-    const moreText = champMoreLink
-      ? `More from ${firstName} — ${champMoreLink} ↑`
-      : `More from ${firstName} ↑`
-    ctx.font         = `500 ${moreSz}px ${sans}`
-    ctx.letterSpacing = '0px'
-    ctx.fillStyle    = M.moreColor
-    ctx.fillText(moreText, x + pad, moreY)
+  // 8. Company logo — bottom-left aligned
+  if (companyLogoImage) {
+    const maxLogoH = Math.round(56 * scale)
+    const maxLogoW = Math.round(240 * scale)
+    const logoAspect = (companyLogoImage.naturalWidth || 1) / (companyLogoImage.naturalHeight || 1)
+    let lw = Math.min(maxLogoW, maxLogoH * logoAspect)
+    let lh = lw / logoAspect
+    if (lh > maxLogoH) { lh = maxLogoH; lw = lh * logoAspect }
+    const logoY = y + h - pad - lh
+    ctx.drawImage(companyLogoImage, x + pad, logoY, lw, lh)
   }
 
   ctx.restore()
 }
 
 // ── Main export
-export function drawChampionPostCanvas(canvas, settings, fontsReady, profileImage, photoBgImage) {
+export function drawChampionPostCanvas(canvas, settings, fontsReady, profileImage, photoBgImage, companyLogoImage) {
   const {
     champColorMode = 'paper-light',
     champFlip      = false,
@@ -213,5 +212,5 @@ export function drawChampionPostCanvas(canvas, settings, fontsReady, profileImag
   drawPhotoSide(ctx, photoX, 0, halfW, ch, profileImage, photoBgImage, M)
 
   // Draw text side
-  drawTextSide(ctx, textX, 0, halfW, ch, settings, M, s, fontsReady)
+  drawTextSide(ctx, textX, 0, halfW, ch, settings, M, s, fontsReady, companyLogoImage)
 }
