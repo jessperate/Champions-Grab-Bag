@@ -31,10 +31,18 @@ export default function ChampionPost() {
   const [settings, setSettings]     = useState({ ...DEFAULT_SETTINGS })
   const [fontsReady, setFontsReady] = useState(false)
   const profileImageRef             = useRef(null)
+  const photoBgImageRef             = useRef(null)
   const photoInputRef               = useRef(null)
 
   useEffect(() => {
     loadFonts().then(() => setFontsReady(true)).catch(() => {})
+  }, [])
+
+  // Preload the laurel-wreath background image
+  useEffect(() => {
+    const img = new Image()
+    img.onload = () => { photoBgImageRef.current = img; setSettings(prev => ({ ...prev })) }
+    img.src = '/ChampionPhotoBackground.png'
   }, [])
 
   const update = useCallback((key, value) => {
@@ -49,7 +57,7 @@ export default function ChampionPost() {
   }, [update])
 
   const draw = useCallback((canvas, s) => {
-    drawChampionPostCanvas(canvas, s, fontsReady, profileImageRef.current)
+    drawChampionPostCanvas(canvas, s, fontsReady, profileImageRef.current, photoBgImageRef.current)
   }, [fontsReady])
 
   const exportJpeg = useCallback(() => {

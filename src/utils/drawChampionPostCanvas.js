@@ -28,119 +28,48 @@ const CHAMP_MODES = {
   },
 }
 
-// ── Halftone dot grid
-function drawHalftoneDots(ctx, x, y, w, h, dotRadius, spacing, color, alpha) {
-  ctx.save()
-  ctx.globalAlpha = alpha
-  ctx.fillStyle = color
-  ctx.beginPath()
-  const cols = Math.ceil(w / spacing) + 2
-  const rows = Math.ceil(h / spacing) + 2
-  for (let row = -1; row <= rows; row++) {
-    for (let col = -1; col <= cols; col++) {
-      const px = x + col * spacing
-      const py = y + row * spacing
-      if (px + dotRadius < x || px - dotRadius > x + w) continue
-      if (py + dotRadius < y || py - dotRadius > y + h) continue
-      ctx.moveTo(px + dotRadius, py)
-      ctx.arc(px, py, dotRadius, 0, Math.PI * 2)
-    }
-  }
-  ctx.fill()
-  ctx.globalAlpha = 1
-  ctx.restore()
-}
-
-// ── Draw individual leaf shape (pointed almond)
-function drawLeaf(ctx, cx, cy, width, height, angle, color) {
-  ctx.save()
-  ctx.translate(cx, cy)
-  ctx.rotate(angle)
-  ctx.beginPath()
-  // Almond/leaf shape using bezier curves
-  ctx.moveTo(0, -height / 2)
-  ctx.bezierCurveTo(width / 2, -height / 4, width / 2, height / 4, 0, height / 2)
-  ctx.bezierCurveTo(-width / 2, height / 4, -width / 2, -height / 4, 0, -height / 2)
-  ctx.closePath()
-  ctx.fillStyle = color
-  ctx.fill()
-  ctx.restore()
-}
-
-// ── Draw scattered laurel leaves on the photo side
-function drawLaurelLeaves(ctx, sideX, sideW, canvasH, scale, color) {
-  // Hardcoded relative positions (normalized to sideW and canvasH)
-  // Each entry: [xRatio, yRatio, widthPx, heightPx, angleDeg]
-  const leaves = [
-    // Top-left cluster
-    [0.06, 0.05, 70, 28, -45],
-    [0.12, 0.08, 60, 24, -30],
-    [0.04, 0.12, 55, 22, -60],
-    [0.18, 0.04, 65, 26, -20],
-    [0.09, 0.18, 58, 23, -50],
-    // Top-right cluster
-    [0.82, 0.06, 72, 29, 40],
-    [0.88, 0.12, 63, 25, 55],
-    [0.76, 0.10, 67, 27, 25],
-    [0.92, 0.04, 58, 23, 70],
-    [0.85, 0.18, 61, 24, 45],
-    // Bottom-left area
-    [0.05, 0.78, 68, 27, -35],
-    [0.12, 0.85, 62, 25, -55],
-    [0.08, 0.92, 70, 28, -20],
-    [0.18, 0.88, 58, 23, -70],
-    // Bottom-right scattered
-    [0.80, 0.82, 65, 26, 50],
-    [0.88, 0.90, 60, 24, 35],
-    [0.75, 0.92, 72, 29, 65],
-    [0.93, 0.78, 58, 23, 30],
-  ]
-
-  leaves.forEach(([xR, yR, w, h, angleDeg]) => {
-    const cx = sideX + xR * sideW
-    const cy = yR * canvasH
-    const lw = w * scale
-    const lh = h * scale
-    const angle = (angleDeg * Math.PI) / 180
-    drawLeaf(ctx, cx, cy, lw, lh, angle, color)
-  })
-}
-
-// ── Photo side: draw bg + halftone + leaves + photo
-function drawPhotoSide(ctx, x, y, w, h, profileImage, M, scale) {
-  // Background
+// ── Photo side: background image + centered headshot on top
+function drawPhotoSide(ctx, x, y, w, h, profileImage, photoBgImage, M) {
+  // Fallback solid fill
   ctx.fillStyle = M.bg
   ctx.fillRect(x, y, w, h)
 
-  // Halftone dot grid
-  const dotRadius = 3 * scale
-  const spacing   = 28 * scale
-  drawHalftoneDots(ctx, x, y, w, h, dotRadius, spacing, '#c5d9cc', 0.5)
-
-  // Laurel leaves decoration
-  drawLaurelLeaves(ctx, x, w, h, scale, '#008c44')
-
-  // Photo — rendered on dark bg with hard-light blend
-  const PHOTO_BG = '#002910'
-  ctx.fillStyle = PHOTO_BG
-  ctx.fillRect(x, y, w, h)
-
-  if (profileImage) {
-    const overscan = 4
-    const ps = Math.max(
-      (w + overscan * 2) / (profileImage.naturalWidth  || 1),
-      (h + overscan * 2) / (profileImage.naturalHeight || 1),
-    )
-    const iw = profileImage.naturalWidth  * ps
-    const ih = profileImage.naturalHeight * ps
-
+  // Draw the laurel-wreath background image scaled to cover the photo side
+  if (photoBgImage) {
+    const bgAspect    = photoBgImage.naturalWidth / photoBgImage.naturalHeight
+    const sideAspect  = w / h
+    let bw, bh
+    if (bgAspect > sideAspect) {
+      bh = h; bw = h * bgAspect
+    } else {
+      bw = w; bh = w / bgAspect
+    }
     ctx.save()
     ctx.beginPath()
     ctx.rect(x, y, w, h)
     ctx.clip()
-    ctx.globalCompositeOperation = 'hard-light'
-    ctx.drawImage(profileImage, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih)
-    ctx.globalCompositeOperation = 'source-over'
+    ctx.drawImage(photoBgImage, x + (w - bw) / 2, y + (h - bh) / 2, bw, bh)
+    ctx.restore()
+  }
+
+  // Draw uploaded headshot centered, at 70% of the side dimensions so leaves frame it
+  if (profileImage) {
+    const photoW = w * 0.70
+    const photoH = h * 0.70
+    const ps = Math.max(
+      photoW / (profileImage.naturalWidth  || 1),
+      photoH / (profileImage.naturalHeight || 1),
+    )
+    const iw = profileImage.naturalWidth  * ps
+    const ih = profileImage.naturalHeight * ps
+    const px = x + (w - iw) / 2
+    const py = y + (h - ih) / 2
+
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(x + (w - photoW) / 2, y + (h - photoH) / 2, photoW, photoH)
+    ctx.clip()
+    ctx.drawImage(profileImage, px, py, iw, ih)
     ctx.restore()
   }
 }
@@ -252,7 +181,7 @@ function drawTextSide(ctx, x, y, w, h, settings, M, scale, fontsReady) {
 }
 
 // ── Main export
-export function drawChampionPostCanvas(canvas, settings, fontsReady, profileImage) {
+export function drawChampionPostCanvas(canvas, settings, fontsReady, profileImage, photoBgImage) {
   const {
     champColorMode = 'paper-light',
     champFlip      = false,
@@ -281,7 +210,7 @@ export function drawChampionPostCanvas(canvas, settings, fontsReady, profileImag
   const textX    = champFlip ? 0     : halfW
 
   // Draw photo side
-  drawPhotoSide(ctx, photoX, 0, halfW, ch, profileImage, M, s)
+  drawPhotoSide(ctx, photoX, 0, halfW, ch, profileImage, photoBgImage, M)
 
   // Draw text side
   drawTextSide(ctx, textX, 0, halfW, ch, settings, M, s, fontsReady)
