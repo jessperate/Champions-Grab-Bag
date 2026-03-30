@@ -1,0 +1,40 @@
+<svg width="400" height="280" viewBox="0 0 400 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="400" height="280" fill="#F8FFFB"/>
+  <!-- Top header band -->
+  <rect width="400" height="140" fill="#F8FFFB"/>
+  <!-- "AirOps" eyebrow -->
+  <rect x="20" y="18" width="48" height="6" rx="3" fill="#009B32"/>
+  <!-- "Champions" large text block -->
+  <rect x="20" y="34" width="220" height="38" rx="4" fill="#002910"/>
+  <rect x="20" y="80" width="160" height="38" rx="4" fill="#002910" opacity="0.6"/>
+  <!-- Divider line -->
+  <line x1="0" y1="140" x2="400" y2="140" stroke="#DDE8E2" stroke-width="1"/>
+  <!-- Bottom-left: photo panel -->
+  <rect x="0" y="140" width="200" height="140" fill="#EEF6F0"/>
+  <!-- Dot pattern hint -->
+  <circle cx="20" cy="158" r="2" fill="#009B32" opacity="0.3"/>
+  <circle cx="36" cy="158" r="2" fill="#009B32" opacity="0.3"/>
+  <circle cx="52" cy="158" r="2" fill="#009B32" opacity="0.3"/>
+  <circle cx="68" cy="158" r="2" fill="#009B32" opacity="0.3"/>
+  <circle cx="20" cy="174" r="2" fill="#009B32" opacity="0.3"/>
+  <circle cx="36" cy="174" r="2" fill="#009B32" opacity="0.3"/>
+  <!-- Stipple portrait silhouette -->
+  <ellipse cx="100" cy="195" rx="38" ry="42" fill="#C8DDD0"/>
+  <ellipse cx="100" cy="175" rx="20" ry="22" fill="#A8C4B0"/>
+  <!-- Laurel leaf hints -->
+  <ellipse cx="62" cy="235" rx="10" ry="5" fill="#008C44" transform="rotate(-30 62 235)"/>
+  <ellipse cx="138" cy="235" rx="10" ry="5" fill="#008C44" transform="rotate(30 138 235)"/>
+  <!-- Bottom-right: text panel -->
+  <rect x="200" y="140" width="200" height="140" fill="#F8FFFB"/>
+  <!-- First name line -->
+  <rect x="220" y="158" width="100" height="18" rx="3" fill="#000D05"/>
+  <!-- Last name line -->
+  <rect x="220" y="182" width="120" height="16" rx="3" fill="#002910" opacity="0.7"/>
+  <!-- Role line -->
+  <rect x="220" y="204" width="140" height="8" rx="2" fill="#002910" opacity="0.4"/>
+  <!-- Quote line -->
+  <rect x="220" y="224" width="130" height="7" rx="2" fill="#009B32" opacity="0.6"/>
+  <rect x="220" y="235" width="110" height="7" rx="2" fill="#009B32" opacity="0.6"/>
+  <rect x="220" y="246" width="90" height="7" rx="2" fill="#009B32" opacity="0.6"/>
+</svg>

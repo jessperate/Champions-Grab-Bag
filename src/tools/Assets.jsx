@@ -6,17 +6,19 @@ import { drawTwitterCanvas } from '../utils/drawTwitterCanvas'
 import { drawRichQuoteCanvas } from '../utils/drawRichQuoteCanvas'
 import { drawTitleCardCanvas } from '../utils/drawTitleCardCanvas'
 import { drawIJoinedCanvas } from '../utils/drawIJoinedCanvas'
+import { drawAnnouncementCanvas } from '../utils/drawAnnouncementCanvas'
 import { generateFleuronFontDots } from '../utils/drawFleurons'
 import { IJ_MODE_LABELS } from '../utils/drawIJoinedCanvas'
 import '../components/Sidebar.css'
 
 // ── Template picker
 const TEMPLATES = [
-  { value: 'quote',     label: 'Quote Block',  icon: '/Icon-BasicQuote.jpg'   },
-  { value: 'richquote', label: 'Rich Quote',   icon: '/Icon-RichQuote.jpg'    },
-  { value: 'titlecard', label: 'Title Card',   icon: '/Icon-TitleCard.jpg'    },
-  { value: 'twitter',   label: 'Twitter Post', icon: '/Icon-Twitter.jpg'      },
-  { value: 'ijoined',   label: 'I Joined',     icon: '/Icon-IJoined.jpg'      },
+  { value: 'announcement', label: 'Announcement', icon: '/Icon-Announcement.svg' },
+  { value: 'quote',        label: 'Quote Block',  icon: '/Icon-BasicQuote.jpg'   },
+  { value: 'richquote',    label: 'Rich Quote',   icon: '/Icon-RichQuote.jpg'    },
+  { value: 'titlecard',    label: 'Title Card',   icon: '/Icon-TitleCard.jpg'    },
+  { value: 'twitter',      label: 'Twitter Post', icon: '/Icon-Twitter.jpg'      },
+  { value: 'ijoined',      label: 'I Joined',     icon: '/Icon-IJoined.jpg'      },
 ]
 
 const MODE_LABELS = {
@@ -36,6 +38,28 @@ const DIMS = [
   { w: 1080, h: 1920, label: '1080×1920', sub: 'Story 9:16' },
   { w: 1920, h: 1080, label: '1920×1080', sub: 'Landscape 16:9' },
 ]
+
+const ANN_COLOR_MODES = [
+  { key: 'paper-light', label: 'Paper Light' },
+  { key: 'paper-dark',  label: 'Paper Dark'  },
+  { key: 'mint',        label: 'Mint'         },
+]
+
+function compressImageToBase64(dataUrl, maxPx, quality) {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      const scale = Math.min(1, maxPx / Math.max(img.width, img.height))
+      const w = Math.round(img.width * scale)
+      const h = Math.round(img.height * scale)
+      const c = document.createElement('canvas')
+      c.width = w; c.height = h
+      c.getContext('2d').drawImage(img, 0, 0, w, h)
+      resolve(c.toDataURL('image/jpeg', quality).split(',')[1])
+    }
+    img.src = dataUrl
+  })
+}
 
 const DEFAULT_SETTINGS = {
   templateType:     'quote',
@@ -81,6 +105,14 @@ const DEFAULT_SETTINGS = {
   ijRole:            'Marketing Strategist',
   ijShowHiring:      true,
   ijProfileImage:    null,
+  // Announcement
+  annFirstName:      'Lucy',
+  annLastName:       'Hoyle',
+  annRoleCompany:    'Senior Content Engineer, Carta',
+  annText:           '\u201CI\u2019m now an AirOps Champion.\u201D',
+  annColorMode:      'paper-light',
+  annProfileImage:   null,
+  annCompanyLogo:    null,
 }
 
 export default function Assets() {
@@ -92,13 +124,23 @@ export default function Assets() {
   const richProfileImageRef  = useRef(null)
   const richCompanyLogoRef   = useRef(null)
   const ijProfileImageRef    = useRef(null)
+  const annProfileImageRef   = useRef(null)
+  const annPhotoBgRef        = useRef(null)
+  const annCompanyLogoRef    = useRef(null)
+  const annOriginalUrlRef    = useRef(null)
+  const annStippleUrlRef     = useRef(null)
   const floraliaDotsRef      = useRef([])
   const [floraliaReady, setFloraliaReady] = useState(0)
+  const [annStippleLoading, setAnnStippleLoading] = useState(false)
+  const [annStippleError, setAnnStippleError]     = useState(null)
+  const [annUsingStipple, setAnnUsingStipple]     = useState(false)
 
   const fileInputRef      = useRef(null)
   const richPhotoInputRef = useRef(null)
   const richLogoInputRef  = useRef(null)
   const ijPhotoInputRef   = useRef(null)
+  const annPhotoInputRef  = useRef(null)
+  const annLogoInputRef   = useRef(null)
 
   useEffect(() => {
     loadFonts().then(() => setFontsReady(true)).catch(() => {})
@@ -127,13 +169,19 @@ export default function Assets() {
     logo.src = '/GTMGen-carta_logo.svg.svg'
   }, [])
 
+  useEffect(() => {
+    const bg = new Image()
+    bg.onload = () => { annPhotoBgRef.current = bg; setSettings(prev => ({ ...prev })) }
+    bg.src = '/ChampionPhotoBackground.png'
+  }, [])
+
   const update = useCallback((key, value) => {
     setSettings(prev => {
       const next = { ...prev, [key]: value }
       if (key === 'templateType' && ['quote', 'richquote'].includes(value) && next.colorMode.startsWith('dark-')) {
         next.colorMode = next.colorMode.replace('dark-', '')
       }
-      if (key === 'templateType' && value === 'ijoined') {
+      if (key === 'templateType' && (value === 'ijoined' || value === 'announcement')) {
         next.dims = { w: 1920, h: 1080 }
       }
       return next
@@ -175,8 +223,73 @@ export default function Assets() {
     img.src = dataUrl
   }, [update])
 
+  const loadAnnPhoto = useCallback((dataUrl) => {
+    if (!dataUrl) { annProfileImageRef.current = null; update('annProfileImage', null); return }
+    const img = new Image()
+    img.onload = () => { annProfileImageRef.current = img; update('annProfileImage', dataUrl) }
+    img.src = dataUrl
+  }, [update])
+
+  const handleAnnPhotoChange = useCallback(async (dataUrl) => {
+    if (!dataUrl) {
+      annOriginalUrlRef.current = null
+      annStippleUrlRef.current = null
+      setAnnUsingStipple(false)
+      setAnnStippleError(null)
+      setAnnStippleLoading(false)
+      loadAnnPhoto(null)
+      return
+    }
+    annOriginalUrlRef.current = dataUrl
+    annStippleUrlRef.current = null
+    setAnnUsingStipple(false)
+    setAnnStippleError(null)
+    loadAnnPhoto(dataUrl)
+
+    setAnnStippleLoading(true)
+    try {
+      const base64 = await compressImageToBase64(dataUrl, 1024, 0.85)
+      const res = await fetch('/api/headshot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: base64 }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`)
+      if (!data.imageBase64) throw new Error('No image returned')
+      const stippleUrl = `data:image/png;base64,${data.imageBase64}`
+      annStippleUrlRef.current = stippleUrl
+      loadAnnPhoto(stippleUrl)
+      setAnnUsingStipple(true)
+    } catch (e) {
+      setAnnStippleError(e.message)
+    } finally {
+      setAnnStippleLoading(false)
+    }
+  }, [loadAnnPhoto])
+
+  const handleAnnUseOriginal = useCallback(() => {
+    loadAnnPhoto(annOriginalUrlRef.current)
+    setAnnUsingStipple(false)
+  }, [loadAnnPhoto])
+
+  const handleAnnUseStipple = useCallback(() => {
+    if (annStippleUrlRef.current) {
+      loadAnnPhoto(annStippleUrlRef.current)
+      setAnnUsingStipple(true)
+    }
+  }, [loadAnnPhoto])
+
+  const handleAnnLogoChange = useCallback((dataUrl) => {
+    if (!dataUrl) { annCompanyLogoRef.current = null; update('annCompanyLogo', null); return }
+    const img = new Image()
+    img.onload = () => { annCompanyLogoRef.current = img; update('annCompanyLogo', dataUrl) }
+    img.src = dataUrl
+  }, [update])
+
   const draw = useCallback((canvas, s) => {
-    if (s.templateType === 'twitter')        drawTwitterCanvas(canvas, s, fontsReady, profileImageRef.current, floraliaDotsRef.current)
+    if (s.templateType === 'announcement')   drawAnnouncementCanvas(canvas, s, fontsReady, annProfileImageRef.current, annPhotoBgRef.current, annCompanyLogoRef.current)
+    else if (s.templateType === 'twitter')   drawTwitterCanvas(canvas, s, fontsReady, profileImageRef.current, floraliaDotsRef.current)
     else if (s.templateType === 'richquote') drawRichQuoteCanvas(canvas, s, fontsReady, richProfileImageRef.current, richCompanyLogoRef.current)
     else if (s.templateType === 'titlecard') drawTitleCardCanvas(canvas, s, fontsReady, floraliaDotsRef.current)
     else if (s.templateType === 'ijoined')   drawIJoinedCanvas(canvas, s, fontsReady, ijProfileImageRef.current, floraliaDotsRef.current)
@@ -189,12 +302,15 @@ export default function Assets() {
     const s  = { ...settings, dims: { w: ew, h: eh } }
     const ec = document.createElement('canvas')
     draw(ec, s)
-    const prefix = settings.templateType === 'twitter'    ? 'airops-tweet'
-      : settings.templateType === 'richquote'             ? 'airops-richquote'
-      : settings.templateType === 'titlecard'             ? 'airops-titlecard'
-      : settings.templateType === 'ijoined'               ? 'airops-ijoined'
+    const prefix = settings.templateType === 'announcement' ? 'airops-announcement'
+      : settings.templateType === 'twitter'                 ? 'airops-tweet'
+      : settings.templateType === 'richquote'               ? 'airops-richquote'
+      : settings.templateType === 'titlecard'               ? 'airops-titlecard'
+      : settings.templateType === 'ijoined'                 ? 'airops-ijoined'
       : 'airops-quote'
-    const modeTag = settings.templateType === 'ijoined' ? settings.ijMode : settings.colorMode
+    const modeTag = settings.templateType === 'ijoined'       ? settings.ijMode
+      : settings.templateType === 'announcement'              ? settings.annColorMode
+      : settings.colorMode
     const a = document.createElement('a')
     a.download = filename ?? `${prefix}-${modeTag}-${ew}x${eh}.jpg`
     a.href = ec.toDataURL('image/jpeg', 0.95)
@@ -244,6 +360,122 @@ export default function Assets() {
           </div>
 
           <div className="div" />
+
+          {/* Announcement */}
+          {settings.templateType === 'announcement' && <>
+            <div className="sec">Content</div>
+            <div className="field">
+              <label>First Name</label>
+              <input type="text" value={settings.annFirstName} onChange={e => update('annFirstName', e.target.value)} />
+            </div>
+            <div className="field">
+              <label>Last Name</label>
+              <input type="text" value={settings.annLastName} onChange={e => update('annLastName', e.target.value)} />
+            </div>
+            <div className="field">
+              <label>Role &amp; Company</label>
+              <input type="text" value={settings.annRoleCompany} onChange={e => update('annRoleCompany', e.target.value)} />
+            </div>
+            <div className="field">
+              <label>Champion Quote</label>
+              <textarea
+                value={settings.annText}
+                onChange={e => update('annText', e.target.value)}
+                style={{ minHeight: 80 }}
+              />
+            </div>
+            <div className="div" />
+            <div className="sec">Photo</div>
+            <div className="field">
+              <input
+                ref={annPhotoInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={e => {
+                  const file = e.target.files?.[0]; if (!file) return
+                  const reader = new FileReader()
+                  reader.onload = ev => handleAnnPhotoChange(ev.target.result)
+                  reader.readAsDataURL(file); e.target.value = ''
+                }}
+              />
+              <button className="btn-upload" onClick={() => annPhotoInputRef.current?.click()}>
+                {settings.annProfileImage ? '↺ Replace Photo' : '↑ Upload Photo'}
+              </button>
+              {settings.annProfileImage && (
+                <button className="btn-clear-photo" onClick={() => handleAnnPhotoChange(null)}>✕ Remove photo</button>
+              )}
+            </div>
+            {settings.annProfileImage && (
+              <div className="field">
+                {annStippleLoading && (
+                  <div style={{ fontSize: 11, color: 'var(--label)', marginBottom: 4 }}>
+                    ⏳ Generating stipple effect…
+                  </div>
+                )}
+                {!annStippleLoading && annStippleUrlRef.current && (
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button
+                      className={`dim-btn${annUsingStipple ? ' active' : ''}`}
+                      style={{ flex: 1, fontSize: 11 }}
+                      onClick={handleAnnUseStipple}
+                    >
+                      Stipple
+                    </button>
+                    <button
+                      className={`dim-btn${!annUsingStipple ? ' active' : ''}`}
+                      style={{ flex: 1, fontSize: 11 }}
+                      onClick={handleAnnUseOriginal}
+                    >
+                      Original
+                    </button>
+                  </div>
+                )}
+                {annStippleError && (
+                  <div style={{ fontSize: 11, color: '#cc3333', marginTop: 4 }}>
+                    ⚠ {annStippleError}
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="div" />
+            <div className="sec">Company Logo</div>
+            <div className="field">
+              <label>Logo (SVG, PNG — dark/black version)</label>
+              <input
+                ref={annLogoInputRef}
+                type="file"
+                accept="image/svg+xml,image/png,image/*"
+                style={{ display: 'none' }}
+                onChange={e => {
+                  const file = e.target.files?.[0]; if (!file) return
+                  const reader = new FileReader()
+                  reader.onload = ev => handleAnnLogoChange(ev.target.result)
+                  reader.readAsDataURL(file); e.target.value = ''
+                }}
+              />
+              <button className="btn-upload" onClick={() => annLogoInputRef.current?.click()}>
+                {settings.annCompanyLogo ? '↺ Replace Logo' : '↑ Upload Logo'}
+              </button>
+              {settings.annCompanyLogo && (
+                <button className="btn-clear-photo" onClick={() => handleAnnLogoChange(null)}>✕ Remove logo</button>
+              )}
+            </div>
+            <div className="div" />
+            <div className="sec">Color Mode</div>
+            <div className="dim-grid">
+              {ANN_COLOR_MODES.map(m => (
+                <button
+                  key={m.key}
+                  className={`dim-btn${settings.annColorMode === m.key ? ' active' : ''}`}
+                  onClick={() => update('annColorMode', m.key)}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+            <div className="div" />
+          </>}
 
           {/* Quote Block */}
           {settings.templateType === 'quote' && <>
@@ -595,8 +827,8 @@ export default function Assets() {
             <div className="div" />
           </>}
 
-          {/* Color Mode — not for I Joined (own palette) */}
-          {settings.templateType !== 'ijoined' && <>
+          {/* Color Mode — not for I Joined or Announcement (own palettes) */}
+          {settings.templateType !== 'ijoined' && settings.templateType !== 'announcement' && <>
             <div className="sec">Color Mode</div>
             {(() => {
               const modes = ['twitter', 'titlecard'].includes(settings.templateType)
@@ -624,7 +856,7 @@ export default function Assets() {
           <div className="dim-grid">
             {DIMS
               .filter(({ w, h }) => {
-                if (settings.templateType === 'ijoined') return w === 1920 && h === 1080
+                if (settings.templateType === 'ijoined' || settings.templateType === 'announcement') return w === 1920 && h === 1080
                 return true
               })
               .map(({ w, h, label, sub }) => (
@@ -641,7 +873,7 @@ export default function Assets() {
           <div className="div" />
 
           <button className="btn-ex" onClick={() => exportJpeg()}>↓ Export JPEG</button>
-          {settings.templateType !== 'ijoined' && (
+          {settings.templateType !== 'ijoined' && settings.templateType !== 'announcement' && (
             <button className="btn-all" onClick={exportAll}>↓ Export All 4 Sizes</button>
           )}
         </div>
