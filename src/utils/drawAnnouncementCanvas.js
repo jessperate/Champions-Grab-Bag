@@ -1,37 +1,90 @@
-import { wrapText } from './drawCanvas.js'
+// ── Leaf helpers (inlined so no external dep needed)
+function _drawLeaf(ctx, cx, cy, leafW, leafH, angle) {
+  ctx.save()
+  ctx.translate(cx, cy)
+  ctx.rotate(angle)
+  ctx.beginPath()
+  ctx.moveTo(0, -leafH / 2)
+  ctx.bezierCurveTo( leafW / 2, -leafH / 4,  leafW / 2, leafH / 4, 0, leafH / 2)
+  ctx.bezierCurveTo(-leafW / 2,  leafH / 4, -leafW / 2, -leafH / 4, 0, -leafH / 2)
+  ctx.closePath()
+  ctx.fill()
+  ctx.restore()
+}
 
-// ── Color modes (matches Champion Post)
+function _drawLeafArc(ctx, cx, cy, radius, startAngle, endAngle, count, side, leafW, leafH) {
+  for (let i = 0; i < count; i++) {
+    const t = i / (count - 1)
+    const angle = startAngle + t * (endAngle - startAngle)
+    const lx = cx + Math.cos(angle) * radius
+    const ly = cy + Math.sin(angle) * radius
+    const leafAngle = angle + (side === 'left' ? -Math.PI / 2 : Math.PI / 2) + Math.PI / 2
+    _drawLeaf(ctx, lx, ly, leafW, leafH, leafAngle)
+  }
+}
+
+// Draw a laurel wreath (no bg, no text) centered at (cx, cy), sized by `size`
+function drawWreath(ctx, cx, cy, size, color) {
+  ctx.fillStyle = color
+  const leafW     = size * 0.10
+  const leafH     = size * 0.20
+  const radius    = size * 0.35
+  const leafCount = 9
+
+  // Upper arc (left branch): upper-left → upper-right
+  _drawLeafArc(ctx, cx, cy, radius,
+    (210 * Math.PI) / 180, (330 * Math.PI) / 180,
+    leafCount, 'left', leafW, leafH)
+
+  // Lower arc (right branch): lower-left → lower-right
+  _drawLeafArc(ctx, cx, cy, radius,
+    (330 * Math.PI) / 180 + Math.PI, (210 * Math.PI) / 180 + Math.PI,
+    leafCount, 'right', leafW, leafH)
+
+  // Bottom connecting leaves
+  const bottomY = cy + size * 0.34
+  _drawLeaf(ctx, cx - size * 0.04, bottomY, size * 0.08, size * 0.16, -0.2)
+  _drawLeaf(ctx, cx + size * 0.04, bottomY, size * 0.08, size * 0.16,  0.2)
+}
+
+// ── Color modes
 const CHAMP_MODES = {
   'paper-light': {
-    bg:        '#f8fffb',
-    text:      '#000d05',
-    lastName:  '#002910',
-    quote:     '#009b32',
-    roleColor: '#002910',
-    dotColor:  '#009b32',
-    headingColor: '#002910',
+    bg:          '#f8fffb',
+    text:        '#000d05',
+    lastName:    '#002910',
+    roleColor:   '#002910',
+    champText:   '#002910',
+    airopsText:  '#009b32',
+    wreathColor: '#002910',
+    dotColor:    '#009b32',
+    logoBorder:  '#002910',
   },
   'paper-dark': {
-    bg:        '#002910',
-    text:      '#f8fffb',
-    lastName:  '#dfeae3',
-    quote:     '#00ff64',
-    roleColor: '#dfeae3',
-    dotColor:  '#00c850',
-    headingColor: '#dfeae3',
+    bg:          '#002910',
+    text:        '#f8fffb',
+    lastName:    '#dfeae3',
+    roleColor:   '#dfeae3',
+    champText:   '#dfeae3',
+    airopsText:  '#00ff64',
+    wreathColor: '#dfeae3',
+    dotColor:    '#00c850',
+    logoBorder:  '#dfeae3',
   },
   'mint': {
-    bg:        '#dfeae3',
-    text:      '#000d05',
-    lastName:  '#002910',
-    quote:     '#008c44',
-    roleColor: '#002910',
-    dotColor:  '#008c44',
-    headingColor: '#002910',
+    bg:          '#dfeae3',
+    text:        '#000d05',
+    lastName:    '#002910',
+    roleColor:   '#002910',
+    champText:   '#002910',
+    airopsText:  '#008c44',
+    wreathColor: '#002910',
+    dotColor:    '#008c44',
+    logoBorder:  '#002910',
   },
 }
 
-// ── Dot halftone pattern
+// ── Dot halftone background
 function drawDotPattern(ctx, x, y, w, h, dotColor, scale) {
   const spacing = Math.round(16 * scale)
   const radius  = Math.max(1, Math.round(2.5 * scale))
@@ -45,178 +98,190 @@ function drawDotPattern(ctx, x, y, w, h, dotColor, scale) {
   }
 }
 
-// ── Photo panel (bottom-left)
-function drawPhotoPanel(ctx, x, y, w, h, profileImage, photoBgImage, M, scale) {
+// ── Header: "airOps" + "Champion[wreath]"
+function drawHeader(ctx, cw, headerH, M, scale, fontsReady) {
+  const sans  = fontsReady ? "'Saans', sans-serif"         : 'sans-serif'
+  const serif = fontsReady ? "'Serrif VF', Georgia, serif" : 'Georgia, serif'
+
   ctx.fillStyle = M.bg
-  ctx.fillRect(x, y, w, h)
+  ctx.fillRect(0, 0, cw, headerH)
 
-  // Dot pattern at low opacity
-  ctx.save()
-  ctx.globalAlpha = 0.2
-  drawDotPattern(ctx, x, y, w, h, M.dotColor, scale)
-  ctx.restore()
+  const marginX = Math.round(18 * scale)
 
-  // Stippled headshot
-  if (profileImage) {
-    const imgScale = (w * 0.95) / (profileImage.naturalWidth || 1)
-    const iw = profileImage.naturalWidth  * imgScale
-    const ih = profileImage.naturalHeight * imgScale
-    const px = x + (w - iw) / 2
-    const py = y + h * 0.05
+  // 1. "airOps" — centered, Saans 500, bright green
+  const airSz = Math.round(72 * scale)
+  ctx.font          = `500 ${airSz}px ${sans}`
+  ctx.letterSpacing = `${(-airSz * 0.01).toFixed(2)}px`
+  ctx.fillStyle     = M.airopsText
+  ctx.textBaseline  = 'top'
+  ctx.textAlign     = 'center'
+  ctx.fillText('airOps', cw / 2, Math.round(44 * scale))
+  ctx.textAlign    = 'left'
+  ctx.letterSpacing = '0px'
 
-    ctx.save()
-    ctx.beginPath()
-    ctx.rect(x, y, w, h)
-    ctx.clip()
-    ctx.drawImage(profileImage, px, py, iw, ih)
-    ctx.restore()
+  // 2. "Champion" — Saans 700, auto-sized to fill canvas width
+  // We draw "Champi" + wreath (replacing 'o') + "n"
+  const baseline = headerH - Math.round(30 * scale)
+  const available = cw - marginX * 2
+
+  // Find font size so full "Champion" width ≈ available
+  let fontSize = Math.round(500 * scale)
+  ctx.font = `700 ${fontSize}px ${sans}`
+  let totalW = ctx.measureText('Champion').width
+  if (totalW > available) {
+    fontSize = Math.round(fontSize * (available / totalW))
+    ctx.font = `700 ${fontSize}px ${sans}`
   }
 
-  // Laurel wreath in foreground
-  if (photoBgImage) {
-    const bgAspect   = photoBgImage.naturalWidth / photoBgImage.naturalHeight
-    const areaAspect = w / h
-    let bw, bh
-    if (bgAspect > areaAspect) { bh = h; bw = h * bgAspect }
-    else                       { bw = w; bh = w / bgAspect }
-    ctx.save()
-    ctx.beginPath()
-    ctx.rect(x, y, w, h)
-    ctx.clip()
-    ctx.drawImage(photoBgImage, x + (w - bw) / 2, y + (h - bh) / 2, bw, bh)
-    ctx.restore()
-  }
+  ctx.letterSpacing = `${(-fontSize * 0.01).toFixed(2)}px`
+
+  const prefixW  = ctx.measureText('Champi').width
+  const oW       = ctx.measureText('o').width
+  // Cap height approx 73% of font size
+  const capH     = fontSize * 0.73
+
+  // Draw "Champi"
+  ctx.fillStyle    = M.champText
+  ctx.textBaseline = 'alphabetic'
+  ctx.fillText('Champi', marginX, baseline)
+
+  // Draw wreath in 'o' slot — size based on cap height, centered vertically on cap
+  const wreathSize = capH * 1.05  // slightly larger than cap height for visual impact
+  const wreathCX   = marginX + prefixW + oW * 0.5
+  const wreathCY   = baseline - capH * 0.5
+
+  ctx.letterSpacing = '0px'
+  drawWreath(ctx, wreathCX, wreathCY, wreathSize, M.wreathColor)
+  ctx.letterSpacing = `${(-fontSize * 0.01).toFixed(2)}px`
+
+  // Draw "n"
+  ctx.fillStyle    = M.champText
+  ctx.textBaseline = 'alphabetic'
+  ctx.fillText('n', marginX + prefixW + oW, baseline)
+  ctx.letterSpacing = '0px'
 }
 
-// ── Text panel (bottom-right)
-function drawTextPanel(ctx, x, y, w, h, settings, M, scale, fontsReady, companyLogoImage) {
+// ── Bottom: photo card + text
+function drawBottomContent(ctx, cw, ch, headerH, settings, M, scale, fontsReady, profileImage, photoBgImage, companyLogoImage) {
   const {
-    annFirstName   = 'Lucy',
-    annLastName    = 'Hoyle',
-    annRoleCompany = 'Senior Content Engineer, Carta',
-    annText        = "\u201CI\u2019m now an AirOps Champion.\u201D",
+    annFirstName = 'Lucy',
+    annLastName  = 'Hoyle',
+    annRole      = 'Senior Content Engineer',
   } = settings
 
   const serif = fontsReady ? "'Serrif VF', Georgia, serif" : 'Georgia, serif'
   const sans  = fontsReady ? "'Saans', sans-serif"         : 'sans-serif'
 
-  ctx.fillStyle = M.bg
-  ctx.fillRect(x, y, w, h)
+  const contentH = ch - headerH
 
-  const pad    = Math.round(72 * scale)
-  const innerW = w - pad * 2
+  // ── Photo card ──────────────────────────────────────────
+  const photoSize = Math.round(375 * scale)
+  const photoX    = Math.round(350 * scale)
+  const photoY    = Math.round(headerH + (contentH - photoSize) / 2)
+
+  // Card background
+  ctx.fillStyle = M.bg
+  ctx.fillRect(photoX, photoY, photoSize, photoSize)
+
+  // Dot pattern at 20% opacity
+  ctx.save()
+  ctx.globalAlpha = 0.2
+  drawDotPattern(ctx, photoX, photoY, photoSize, photoSize, M.dotColor, scale)
+  ctx.restore()
+
+  // Stippled headshot — 95% width, top-aligned with 5% padding
+  if (profileImage) {
+    const imgScale = (photoSize * 0.95) / (profileImage.naturalWidth || 1)
+    const iw = profileImage.naturalWidth  * imgScale
+    const ih = profileImage.naturalHeight * imgScale
+    const px = photoX + (photoSize - iw) / 2
+    const py = photoY + photoSize * 0.05
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(photoX, photoY, photoSize, photoSize)
+    ctx.clip()
+    ctx.drawImage(profileImage, px, py, iw, ih)
+    ctx.restore()
+  }
+
+  // Laurel wreath PNG in foreground
+  if (photoBgImage) {
+    const bgAspect = photoBgImage.naturalWidth / photoBgImage.naturalHeight
+    const areaAspect = 1  // square card
+    let bw, bh
+    if (bgAspect > areaAspect) { bh = photoSize; bw = photoSize * bgAspect }
+    else                       { bw = photoSize; bh = photoSize / bgAspect }
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(photoX, photoY, photoSize, photoSize)
+    ctx.clip()
+    ctx.drawImage(photoBgImage, photoX + (photoSize - bw) / 2, photoY + (photoSize - bh) / 2, bw, bh)
+    ctx.restore()
+  }
+
+  // ── Text panel ───────────────────────────────────────────
+  const textX = photoX + photoSize + Math.round(50 * scale)
+  const textY = photoY
+  const textW = cw - textX - Math.round(40 * scale)
 
   ctx.save()
   ctx.beginPath()
-  ctx.rect(x, y, w, h)
+  ctx.rect(textX, 0, textW, ch)
   ctx.clip()
 
   ctx.textBaseline = 'top'
   ctx.textAlign    = 'left'
 
-  // 1. First name — Serrif VF 400, ~140px
-  const firstSz = Math.round(140 * scale)
-  const firstLH = firstSz * 1.0
+  // First name — Serrif VF 400, ~130px
+  const firstSz = Math.round(130 * scale)
   ctx.font          = `400 ${firstSz}px ${serif}`
   ctx.letterSpacing = `${(-firstSz * 0.02).toFixed(2)}px`
   ctx.fillStyle     = M.text
-  ctx.fillText(annFirstName, x + pad, y + pad)
+  ctx.fillText(annFirstName, textX, textY)
 
-  // 2. Last name — Saans 400, ~132px
-  const lastSz = Math.round(132 * scale)
-  const lastLH = lastSz * 1.0
+  // Last name — Saans 400, ~115px
+  const lastSz = Math.round(115 * scale)
+  const lastY  = textY + firstSz * 1.0 + Math.round(4 * scale)
   ctx.font          = `400 ${lastSz}px ${sans}`
   ctx.letterSpacing = `${(-lastSz * 0.02).toFixed(2)}px`
   ctx.fillStyle     = M.lastName
-  ctx.fillText(annLastName, x + pad, y + pad + firstLH + 4)
+  ctx.fillText(annLastName, textX, lastY)
 
-  // 3. Role/Company — Saans 400, ~36px, +2% tracking
-  const roleSz = Math.round(36 * scale)
-  const roleY  = y + pad + firstLH + 4 + lastLH + Math.round(24 * scale)
+  // Role — Saans 400, ~32px, +2% tracking
+  const roleSz = Math.round(32 * scale)
+  const roleY  = lastY + lastSz * 1.0 + Math.round(20 * scale)
   ctx.font          = `400 ${roleSz}px ${sans}`
   ctx.letterSpacing = `${(roleSz * 0.02).toFixed(2)}px`
   ctx.fillStyle     = M.roleColor
-  ctx.fillText(annRoleCompany, x + pad, roleY)
+  ctx.fillText(annRole, textX, roleY)
   ctx.letterSpacing = '0px'
 
-  // 4. Gap
-  const labelY = roleY + roleSz * 1.2 + Math.round(80 * scale)
-
-  // 5. Label — Saans 400, ~28px
-  const labelSz = Math.round(28 * scale)
-  ctx.font      = `400 ${labelSz}px ${sans}`
-  ctx.fillStyle = M.text
-  ctx.fillText('Champion because...', x + pad, labelY)
-
-  // 6. Announcement / quote text — Serrif VF 400, ~52px
-  const logoReserve = companyLogoImage ? Math.round(80 * scale) : 0
-  const quoteSzBase = Math.round(52 * scale)
-  const quoteY      = labelY + labelSz * 1.3 + Math.round(16 * scale)
-  const quoteMaxH   = h - (quoteY - y) - pad - logoReserve - Math.round(24 * scale)
-
-  let qFont = quoteSzBase
-  let qLines
-  for (let f = quoteSzBase; f >= Math.round(24 * scale); f -= 1) {
-    ctx.font          = `400 ${f}px ${serif}`
-    ctx.letterSpacing = `${(-f * 0.01).toFixed(2)}px`
-    qLines = wrapText(ctx, annText, innerW)
-    if (qLines.length * f * 1.15 <= quoteMaxH) { qFont = f; break }
-  }
-
-  ctx.font          = `400 ${qFont}px ${serif}`
-  ctx.letterSpacing = `${(-qFont * 0.01).toFixed(2)}px`
-  qLines = wrapText(ctx, annText, innerW)
-  const qLH = qFont * 1.15
-  ctx.fillStyle = M.quote
-  qLines.forEach((line, i) => {
-    ctx.fillText(line, x + pad, quoteY + i * qLH)
-  })
-  ctx.letterSpacing = '0px'
-
-  // 7. Company logo — bottom-left aligned
+  // Company logo in bordered box
   if (companyLogoImage) {
-    const maxLogoH   = Math.round(56 * scale)
-    const maxLogoW   = Math.round(240 * scale)
+    const logoGap   = Math.round(40 * scale)
+    const boxH      = Math.round(65 * scale)
+    const boxPad    = Math.round(16 * scale)
+    const maxLogoH  = boxH - boxPad * 2
+    const maxLogoW  = Math.round(240 * scale)
     const logoAspect = (companyLogoImage.naturalWidth || 1) / (companyLogoImage.naturalHeight || 1)
     let lw = Math.min(maxLogoW, maxLogoH * logoAspect)
     let lh = lw / logoAspect
     if (lh > maxLogoH) { lh = maxLogoH; lw = lh * logoAspect }
-    ctx.drawImage(companyLogoImage, x + pad, y + h - pad - lh, lw, lh)
+
+    const boxW  = lw + boxPad * 2
+    const boxY  = roleY + roleSz * 1.2 + logoGap
+    const logoX = textX + boxPad
+    const logoY = boxY + (boxH - lh) / 2
+
+    // Bordered box
+    ctx.strokeStyle = M.logoBorder
+    ctx.lineWidth   = Math.round(2 * scale)
+    ctx.strokeRect(textX, boxY, boxW, boxH)
+
+    ctx.drawImage(companyLogoImage, logoX, logoY, lw, lh)
   }
 
   ctx.restore()
-}
-
-// ── Top header band (full width)
-function drawHeader(ctx, cw, headerH, M, scale, fontsReady) {
-  const serif = fontsReady ? "'Serrif VF', Georgia, serif" : 'Georgia, serif'
-  const sans  = fontsReady ? "'Saans', sans-serif"         : 'sans-serif'
-
-  ctx.fillStyle = M.bg
-  ctx.fillRect(0, 0, cw, headerH)
-
-  const pad = Math.round(80 * scale)
-
-  // "AirOps" eyebrow — Saans 400, ~28px, wide tracking
-  const eyebrowSz = Math.round(28 * scale)
-  ctx.font          = `400 ${eyebrowSz}px ${sans}`
-  ctx.letterSpacing = `${(eyebrowSz * 0.12).toFixed(2)}px`
-  ctx.fillStyle     = M.quote
-  ctx.textBaseline  = 'top'
-  ctx.textAlign     = 'left'
-  ctx.fillText('AIROPS', pad, pad)
-  ctx.letterSpacing = '0px'
-
-  // "Champions" — Serrif VF 400, fills most of the header height
-  const champSz = Math.round(Math.min(220 * scale, (headerH - pad * 2.5) * 0.85))
-  ctx.font          = `400 ${champSz}px ${serif}`
-  ctx.letterSpacing = `${(-champSz * 0.02).toFixed(2)}px`
-  ctx.fillStyle     = M.headingColor
-  ctx.textBaseline  = 'alphabetic'
-  ctx.fillText('Champions', pad, headerH - pad)
-  ctx.letterSpacing = '0px'
-
-  ctx.textBaseline = 'top'
 }
 
 // ── Main export
@@ -238,18 +303,13 @@ export function drawAnnouncementCanvas(canvas, settings, fontsReady, profileImag
 
   const M = CHAMP_MODES[annColorMode] ?? CHAMP_MODES['paper-light']
 
+  // Full background
   ctx.fillStyle = M.bg
   ctx.fillRect(0, 0, cw, ch)
 
-  const halfW   = Math.round(cw / 2)
-  const headerH = Math.round(ch * 0.5)
+  // Header height: ~43% of canvas height
+  const headerH = Math.round(ch * 0.43)
 
-  // Top header — full width
   drawHeader(ctx, cw, headerH, M, s, fontsReady)
-
-  // Bottom-left — photo panel
-  drawPhotoPanel(ctx, 0, headerH, halfW, ch - headerH, profileImage, photoBgImage, M, s)
-
-  // Bottom-right — text panel
-  drawTextPanel(ctx, halfW, headerH, cw - halfW, ch - headerH, settings, M, s, fontsReady, companyLogoImage)
+  drawBottomContent(ctx, cw, ch, headerH, settings, M, s, fontsReady, profileImage, photoBgImage, companyLogoImage)
 }

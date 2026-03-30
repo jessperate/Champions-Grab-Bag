@@ -108,8 +108,7 @@ const DEFAULT_SETTINGS = {
   // Announcement
   annFirstName:      'Lucy',
   annLastName:       'Hoyle',
-  annRoleCompany:    'Senior Content Engineer, Carta',
-  annText:           '\u201CI\u2019m now an AirOps Champion.\u201D',
+  annRole:           'Senior Content Engineer',
   annColorMode:      'paper-light',
   annProfileImage:   null,
   annCompanyLogo:    null,
@@ -373,16 +372,8 @@ export default function Assets() {
               <input type="text" value={settings.annLastName} onChange={e => update('annLastName', e.target.value)} />
             </div>
             <div className="field">
-              <label>Role &amp; Company</label>
-              <input type="text" value={settings.annRoleCompany} onChange={e => update('annRoleCompany', e.target.value)} />
-            </div>
-            <div className="field">
-              <label>Champion Quote</label>
-              <textarea
-                value={settings.annText}
-                onChange={e => update('annText', e.target.value)}
-                style={{ minHeight: 80 }}
-              />
+              <label>Title</label>
+              <input type="text" value={settings.annRole} onChange={e => update('annRole', e.target.value)} />
             </div>
             <div className="div" />
             <div className="sec">Photo</div>
