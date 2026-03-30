@@ -100,9 +100,9 @@ const MODES = {
 // Scale by s = cw/1920 to support other canvas sizes.
 // ─────────────────────────────────────────────────────────────
 
-// ── Canvas decorative border (from Figma: x:30 y:30 w:1856 h:1018)
+// ── Canvas decorative border (from Figma: x:29 y:29 w:1858 h:1020)
 function drawBorder(ctx, cw, ch, color, s) {
-  const inset = Math.round(30 * s)
+  const inset = Math.round(29 * s)
   ctx.strokeStyle = color
   ctx.lineWidth   = Math.round(2 * s)
   ctx.strokeRect(inset, inset, cw - inset * 2, ch - inset * 2)
@@ -111,12 +111,12 @@ function drawBorder(ctx, cw, ch, color, s) {
 // ── Header: "airOps" centered + "Champion[wreath]" auto-sized
 // Figma: airOps box at x:784 y:91 w:351 h:112  (center x=959.5≈960)
 // Figma: header boundary at y:557
-function drawHeader(ctx, cw, ch, M, s, fontsReady) {
+function drawHeader(ctx, cw, ch, M, s, fontsReady, photoBgImage) {
   const sans  = fontsReady ? "'Saans', sans-serif"         : 'sans-serif'
   const serif = fontsReady ? "'Serrif VF', Georgia, serif" : 'Georgia, serif'
 
   ctx.fillStyle = M.bg
-  ctx.fillRect(0, 0, cw, Math.round(557 * s))
+  ctx.fillRect(0, 0, cw, Math.round(560 * s))
 
   // ── "airOps" — centered, vertically centered in Figma box (y:91 h:112)
   const airBoxY = Math.round(91  * s)
@@ -130,9 +130,9 @@ function drawHeader(ctx, cw, ch, M, s, fontsReady) {
   ctx.fillText('airOps', cw / 2, airBoxY + airBoxH / 2)
   ctx.letterSpacing = '0px'
 
-  // ── "Champion[wreath]" — auto-size to fill from x:30 to near right edge
+  // ── "Champion[wreath]" — auto-size to fill from x:29 to near right edge
   // baseline at y:540 (just above photo at y:557)
-  const marginX  = Math.round(30 * s)
+  const marginX  = Math.round(29 * s)
   const baseline = Math.round(540 * s)
   const maxWidth = cw - marginX * 2
 
@@ -163,7 +163,20 @@ function drawHeader(ctx, cw, ch, M, s, fontsReady) {
   const wreathCY   = baseline - capH * 0.5
 
   ctx.letterSpacing = '0px'
-  drawWreath(ctx, wreathCX, wreathCY, wreathSize, M.wreathColor)
+  if (photoBgImage) {
+    // Use the actual laurel wreath PNG asset for a faithful Figma match
+    ctx.save()
+    ctx.drawImage(
+      photoBgImage,
+      wreathCX - wreathSize / 2,
+      wreathCY - wreathSize / 2,
+      wreathSize,
+      wreathSize
+    )
+    ctx.restore()
+  } else {
+    drawWreath(ctx, wreathCX, wreathCY, wreathSize, M.wreathColor)
+  }
   ctx.letterSpacing = `${(-fontSize * 0.01).toFixed(2)}px`
 
   // Draw "n"
@@ -174,10 +187,10 @@ function drawHeader(ctx, cw, ch, M, s, fontsReady) {
 }
 
 // ── Photo card
-// Figma: x:479 y:557 w:481 h:488  border stroke:#005e1f
+// Figma: x:479 y:560 w:481 h:488  border stroke:#005e1f
 function drawPhotoCard(ctx, M, s, profileImage, photoBgImage) {
   const px = Math.round(479 * s)
-  const py = Math.round(557 * s)
+  const py = Math.round(560 * s)
   const pw = Math.round(481 * s)
   const ph = Math.round(488 * s)
 
@@ -226,9 +239,8 @@ function drawPhotoCard(ctx, M, s, profileImage, photoBgImage) {
 }
 
 // ── Text panel
-// Figma: text left x:1013, photo top y:557
-//        role bg at y:808 h:35 w:307  fill:#eef9f3
-//        logo clip at y:929 w:197 h:86
+// Figma: text left x:1013, text group top y:632
+//        role text at y:808 (from Figma layout), logo x:1013 y:932 w:197 h:86
 function drawTextPanel(ctx, cw, M, s, fontsReady, settings, companyLogoImage) {
   const {
     annFirstName = 'Lucy',
@@ -243,22 +255,22 @@ function drawTextPanel(ctx, cw, M, s, fontsReady, settings, companyLogoImage) {
 
   ctx.save()
   ctx.beginPath()
-  ctx.rect(tx, 0, cw - tx - Math.round(30 * s), cw)  // clip to text column
+  ctx.rect(tx, 0, cw - tx - Math.round(29 * s), cw)  // clip to text column
   ctx.clip()
 
   ctx.textBaseline = 'top'
   ctx.textAlign    = 'left'
 
-  // ── First name — Serrif VF 400, ~130px, top aligned with photo (y:557)
-  const firstSz = Math.round(130 * s)
+  // ── First name — Serrif VF 400, 81px, top at y:632 (Figma)
+  const firstSz = Math.round(81 * s)
   ctx.font          = `400 ${firstSz}px ${serif}`
   ctx.letterSpacing = `${(-firstSz * 0.02).toFixed(2)}px`
   ctx.fillStyle     = M.firstName
-  ctx.fillText(annFirstName, tx, Math.round(557 * s))
+  ctx.fillText(annFirstName, tx, Math.round(632 * s))
 
-  // ── Last name — Saans 400, ~116px, tight below first name
-  const lastSz = Math.round(116 * s)
-  const lastY  = Math.round(557 * s) + Math.round(130 * s) + Math.round(5 * s)
+  // ── Last name — Saans 400, 81px, tight below first name (leading 1.1)
+  const lastSz = Math.round(81 * s)
+  const lastY  = Math.round(632 * s) + Math.round(firstSz * 1.1)
   ctx.font          = `400 ${lastSz}px ${sans}`
   ctx.letterSpacing = `${(-lastSz * 0.02).toFixed(2)}px`
   ctx.fillStyle     = M.lastName
@@ -267,18 +279,18 @@ function drawTextPanel(ctx, cw, M, s, fontsReady, settings, companyLogoImage) {
   ctx.letterSpacing = '0px'
 
   // ── Role — Saans 400, inside tinted pill background
-  // Figma: bg rect x:1013 y:808 w:307 h:35 fill:#eef9f3
+  // Figma: y = firstNameY + firstSz*1.1 + lastSz*1.0 + gap(9)
   const roleBgX = tx
-  const roleBgY = Math.round(808 * s)
+  const roleBgY = Math.round(632 * s) + Math.round(firstSz * 1.1) + lastSz + Math.round(9 * s)
   const roleBgW = Math.round(307 * s)
   const roleBgH = Math.round(35  * s)
-  const roleSz  = Math.round(24  * s)
+  const roleSz  = Math.round(27  * s)
 
   ctx.fillStyle = M.roleBg
   ctx.fillRect(roleBgX, roleBgY, roleBgW, roleBgH)
 
   ctx.font          = `400 ${roleSz}px ${sans}`
-  ctx.letterSpacing = `${(roleSz * 0.01).toFixed(2)}px`
+  ctx.letterSpacing = `${(roleSz * 0.02).toFixed(2)}px`
   ctx.fillStyle     = M.roleColor
   ctx.textBaseline  = 'middle'
   ctx.fillText(annRole, roleBgX + Math.round(10 * s), roleBgY + roleBgH / 2)
@@ -289,7 +301,7 @@ function drawTextPanel(ctx, cw, M, s, fontsReady, settings, companyLogoImage) {
   // Figma: clip x:1013 y:929 w:197 h:86
   if (companyLogoImage) {
     const logoClipX = Math.round(1013 * s)
-    const logoClipY = Math.round(929  * s)
+    const logoClipY = Math.round(932  * s)
     const logoClipW = Math.round(197  * s)
     const logoClipH = Math.round(86   * s)
 
@@ -345,7 +357,7 @@ export function drawAnnouncementCanvas(canvas, settings, fontsReady, profileImag
   drawBorder(ctx, cw, ch, M.border, s)
 
   // Header
-  drawHeader(ctx, cw, ch, M, s, fontsReady)
+  drawHeader(ctx, cw, ch, M, s, fontsReady, photoBgImage)
 
   // Photo card
   drawPhotoCard(ctx, M, s, profileImage, photoBgImage)

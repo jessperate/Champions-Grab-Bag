@@ -223,10 +223,13 @@ export default function Assets() {
   }, [update])
 
   const loadAnnPhoto = useCallback((dataUrl) => {
-    if (!dataUrl) { annProfileImageRef.current = null; update('annProfileImage', null); return }
-    const img = new Image()
-    img.onload = () => { annProfileImageRef.current = img; update('annProfileImage', dataUrl) }
-    img.src = dataUrl
+    return new Promise((resolve) => {
+      if (!dataUrl) { annProfileImageRef.current = null; update('annProfileImage', null); resolve(); return }
+      const img = new Image()
+      img.onload  = () => { annProfileImageRef.current = img; update('annProfileImage', dataUrl); resolve() }
+      img.onerror = () => resolve()
+      img.src = dataUrl
+    })
   }, [update])
 
   const handleAnnPhotoChange = useCallback(async (dataUrl) => {
@@ -243,7 +246,9 @@ export default function Assets() {
     annStippleUrlRef.current = null
     setAnnUsingStipple(false)
     setAnnStippleError(null)
-    loadAnnPhoto(dataUrl)
+
+    // Load original into canvas first, then start stipple generation
+    await loadAnnPhoto(dataUrl)
 
     setAnnStippleLoading(true)
     try {
