@@ -34,25 +34,7 @@ function drawPhotoSide(ctx, x, y, w, h, profileImage, photoBgImage, M) {
   ctx.fillStyle = M.bg
   ctx.fillRect(x, y, w, h)
 
-  // Draw the laurel-wreath background image scaled to cover the photo side
-  if (photoBgImage) {
-    const bgAspect    = photoBgImage.naturalWidth / photoBgImage.naturalHeight
-    const sideAspect  = w / h
-    let bw, bh
-    if (bgAspect > sideAspect) {
-      bh = h; bw = h * bgAspect
-    } else {
-      bw = w; bh = w / bgAspect
-    }
-    ctx.save()
-    ctx.beginPath()
-    ctx.rect(x, y, w, h)
-    ctx.clip()
-    ctx.drawImage(photoBgImage, x + (w - bw) / 2, y + (h - bh) / 2, bw, bh)
-    ctx.restore()
-  }
-
-  // Draw uploaded headshot: scale to fill frame width, top-aligned so face shows prominently
+  // Draw stipple first so laurel sits on top
   if (profileImage) {
     const scale = (w * 0.95) / (profileImage.naturalWidth || 1)
     const iw = profileImage.naturalWidth  * scale
@@ -64,8 +46,25 @@ function drawPhotoSide(ctx, x, y, w, h, profileImage, photoBgImage, M) {
     ctx.beginPath()
     ctx.rect(x, y, w, h)
     ctx.clip()
-    ctx.globalCompositeOperation = 'multiply'
     ctx.drawImage(profileImage, px, py, iw, ih)
+    ctx.restore()
+  }
+
+  // Draw laurel wreath in foreground so leaves appear over the stipple
+  if (photoBgImage) {
+    const bgAspect   = photoBgImage.naturalWidth / photoBgImage.naturalHeight
+    const sideAspect = w / h
+    let bw, bh
+    if (bgAspect > sideAspect) {
+      bh = h; bw = h * bgAspect
+    } else {
+      bw = w; bh = w / bgAspect
+    }
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(x, y, w, h)
+    ctx.clip()
+    ctx.drawImage(photoBgImage, x + (w - bw) / 2, y + (h - bh) / 2, bw, bh)
     ctx.restore()
   }
 }

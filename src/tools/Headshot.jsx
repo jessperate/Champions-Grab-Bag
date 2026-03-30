@@ -38,27 +38,20 @@ async function compositeWithLaurel(stippleDataUrl) {
   c.width = SIZE; c.height = SIZE
   const ctx = c.getContext('2d')
 
-  // Draw laurel bg scaled to cover
-  const bgAspect = laurel.naturalWidth / laurel.naturalHeight
-  let bw, bh
-  if (bgAspect > 1) { bh = SIZE; bw = SIZE * bgAspect }
-  else              { bw = SIZE; bh = SIZE / bgAspect }
-  ctx.drawImage(laurel, (SIZE - bw) / 2, (SIZE - bh) / 2, bw, bh)
-
-  // Draw stipple: scale to 95% width, centered, 5% from top
+  // Draw stipple first
   const scale = (SIZE * 0.95) / (stipple.naturalWidth || 1)
   const iw = stipple.naturalWidth  * scale
   const ih = stipple.naturalHeight * scale
   const px = (SIZE - iw) / 2
   const py = SIZE * 0.05
-
-  ctx.save()
-  ctx.beginPath()
-  ctx.rect(0, 0, SIZE, SIZE)
-  ctx.clip()
-  ctx.globalCompositeOperation = 'multiply'
   ctx.drawImage(stipple, px, py, iw, ih)
-  ctx.restore()
+
+  // Draw laurel in foreground so leaves appear over the stipple
+  const bgAspect = laurel.naturalWidth / laurel.naturalHeight
+  let bw, bh
+  if (bgAspect > 1) { bh = SIZE; bw = SIZE * bgAspect }
+  else              { bw = SIZE; bh = SIZE / bgAspect }
+  ctx.drawImage(laurel, (SIZE - bw) / 2, (SIZE - bh) / 2, bw, bh)
 
   return c.toDataURL('image/png')
 }
