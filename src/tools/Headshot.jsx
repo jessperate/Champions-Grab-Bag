@@ -1,28 +1,133 @@
 import { useState, useCallback, useRef } from 'react'
 import './Headshot.css'
 
-export default function Headshot() {
-  const [originalImage, setOriginalImage]     = useState(null)  // data URL
-  const [originalFile, setOriginalFile]       = useState(null)  // base64
-  const [stippleImage, setStippleImage]       = useState(null)  // data URL result
-  const [loading, setLoading]                 = useState(false)
-  const [error, setError]                     = useState(null)
-  const [dragOver, setDragOver]               = useState(false)
-  const fileInputRef                          = useRef(null)
+const SIZE = 1080
 
-  const handleFile = useCallback((file) => {
+function compressImageToBase64(dataUrl, maxPx, quality) {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      const scale = Math.min(1, maxPx / Math.max(img.width, img.height))
+      const w = Math.round(img.width * scale)
+      const h = Math.round(img.height * scale)
+      const c = document.createElement('canvas')
+      c.width = w; c.height = h
+      c.getContext('2d').drawImage(img, 0, 0, w, h)
+      resolve(c.toDataURL('image/jpeg', quality).split(',')[1])
+    }
+    img.src = dataUrl
+  })
+}
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve(img)
+    img.onerror = reject
+    img.src = src
+  })
+}
+
+async function compositeWithLaurel(stippleDataUrl) {
+  const [laurel, stipple] = await Promise.all([
+    loadImage('/ChampionPhotoBackground.png'),
+    loadImage(stippleDataUrl),
+  ])
+
+  const c = document.createElement('canvas')
+  c.width = SIZE; c.height = SIZE
+  const ctx = c.getContext('2d')
+
+  // Draw laurel bg scaled to cover
+  const bgAspect = laurel.naturalWidth / laurel.naturalHeight
+  let bw, bh
+  if (bgAspect > 1) { bh = SIZE; bw = SIZE * bgAspect }
+  else              { bw = SIZE; bh = SIZE / bgAspect }
+  ctx.drawImage(laurel, (SIZE - bw) / 2, (SIZE - bh) / 2, bw, bh)
+
+  // Draw stipple: scale to 95% width, centered, 5% from top
+  const scale = (SIZE * 0.95) / (stipple.naturalWidth || 1)
+  const iw = stipple.naturalWidth  * scale
+  const ih = stipple.naturalHeight * scale
+  const px = (SIZE - iw) / 2
+  const py = SIZE * 0.05
+
+  ctx.save()
+  ctx.beginPath()
+  ctx.rect(0, 0, SIZE, SIZE)
+  ctx.clip()
+  ctx.drawImage(stipple, px, py, iw, ih)
+  ctx.restore()
+
+  return c.toDataURL('image/png')
+}
+
+export default function Headshot() {
+  const [originalImage, setOriginalImage] = useState(null)
+  const [compositeImage, setCompositeImage] = useState(null)
+  const [loading, setLoading]   = useState(false)
+  const [error, setError]       = useState(null)
+  const [dragOver, setDragOver] = useState(false)
+  const originalFileRef         = useRef(null)
+  const fileInputRef            = useRef(null)
+
+  const handleFile = useCallback(async (file) => {
     if (!file) return
     const reader = new FileReader()
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const dataUrl = e.target.result
       setOriginalImage(dataUrl)
-      // Extract base64 without prefix
-      const base64 = dataUrl.split(',')[1]
-      setOriginalFile(base64)
-      setStippleImage(null)
+      setCompositeImage(null)
       setError(null)
+      originalFileRef.current = dataUrl
+
+      // Auto-generate on upload
+      setLoading(true)
+      try {
+        const base64 = await compressImageToBase64(dataUrl, 1024, 0.85)
+        const res = await fetch('/api/headshot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageBase64: base64 }),
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`)
+        if (!data.imageBase64) throw new Error('No image returned from API')
+        const stippleUrl = `data:image/png;base64,${data.imageBase64}`
+        const composite = await compositeWithLaurel(stippleUrl)
+        setCompositeImage(composite)
+      } catch (e) {
+        setError(e.message)
+      } finally {
+        setLoading(false)
+      }
     }
     reader.readAsDataURL(file)
+  }, [])
+
+  const handleRegenerate = useCallback(async () => {
+    if (!originalFileRef.current) return
+    setLoading(true)
+    setError(null)
+    setCompositeImage(null)
+    try {
+      const base64 = await compressImageToBase64(originalFileRef.current, 1024, 0.85)
+      const res = await fetch('/api/headshot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: base64 }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`)
+      if (!data.imageBase64) throw new Error('No image returned from API')
+      const stippleUrl = `data:image/png;base64,${data.imageBase64}`
+      const composite = await compositeWithLaurel(stippleUrl)
+      setCompositeImage(composite)
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   const handleDrop = useCallback((e) => {
@@ -32,35 +137,13 @@ export default function Headshot() {
     if (file && file.type.startsWith('image/')) handleFile(file)
   }, [handleFile])
 
-  const handleGenerate = useCallback(async () => {
-    if (!originalFile) return
-    setLoading(true)
-    setError(null)
-    setStippleImage(null)
-    try {
-      const res = await fetch('/api/headshot', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64: originalFile }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`)
-      if (!data.imageBase64) throw new Error('No image returned from API')
-      setStippleImage(`data:image/png;base64,${data.imageBase64}`)
-    } catch (e) {
-      setError(e.message)
-    } finally {
-      setLoading(false)
-    }
-  }, [originalFile])
-
   const handleDownload = useCallback(() => {
-    if (!stippleImage) return
+    if (!compositeImage) return
     const a = document.createElement('a')
-    a.download = 'airops-champion-stipple.png'
-    a.href = stippleImage
+    a.download = 'airops-champion-portrait.png'
+    a.href = compositeImage
     a.click()
-  }, [stippleImage])
+  }, [compositeImage])
 
   return (
     <div className="headshot-page">
@@ -72,7 +155,6 @@ export default function Headshot() {
           </p>
         </div>
 
-        {/* Upload zone */}
         {!originalImage ? (
           <div
             className={`headshot-dropzone${dragOver ? ' over' : ''}`}
@@ -95,7 +177,6 @@ export default function Headshot() {
           </div>
         ) : (
           <>
-            {/* Side-by-side comparison */}
             <div className="headshot-comparison">
               <div className="headshot-panel">
                 <div className="headshot-panel-label">Original</div>
@@ -104,7 +185,7 @@ export default function Headshot() {
                 </div>
                 <button
                   className="headshot-btn-secondary"
-                  onClick={() => { setOriginalImage(null); setOriginalFile(null); setStippleImage(null); setError(null) }}
+                  onClick={() => { setOriginalImage(null); setCompositeImage(null); setError(null); originalFileRef.current = null }}
                 >
                   ↺ Upload different photo
                 </button>
@@ -113,22 +194,22 @@ export default function Headshot() {
               <div className="headshot-arrow">→</div>
 
               <div className="headshot-panel">
-                <div className="headshot-panel-label">Stipple Portrait</div>
+                <div className="headshot-panel-label">Champion Portrait</div>
                 <div className={`headshot-panel-img-wrap${loading ? ' loading' : ''}`}>
-                  {stippleImage ? (
-                    <img src={stippleImage} alt="Stipple" className="headshot-panel-img" />
+                  {compositeImage ? (
+                    <img src={compositeImage} alt="Champion Portrait" className="headshot-panel-img" />
                   ) : loading ? (
                     <div className="headshot-generating">
                       <div className="headshot-spinner" />
-                      <span>Generating stipple portrait…</span>
+                      <span>Generating portrait…</span>
                     </div>
                   ) : (
                     <div className="headshot-placeholder">
-                      <span>Click Generate to create your stipple portrait</span>
+                      <span>Generating portrait…</span>
                     </div>
                   )}
                 </div>
-                {stippleImage && (
+                {compositeImage && (
                   <button className="headshot-btn-primary" onClick={handleDownload}>
                     ↓ Download PNG
                   </button>
@@ -136,33 +217,15 @@ export default function Headshot() {
               </div>
             </div>
 
-            {error && (
-              <div className="headshot-error">{error}</div>
-            )}
+            {error && <div className="headshot-error">⚠ {error}</div>}
 
-            {!stippleImage && !loading && (
+            {compositeImage && (
               <div className="headshot-actions">
-                <button
-                  className="headshot-btn-generate"
-                  onClick={handleGenerate}
-                  disabled={loading}
-                >
-                  Generate Stipple Portrait
-                </button>
-              </div>
-            )}
-
-            {stippleImage && (
-              <div className="headshot-actions">
-                <button className="headshot-btn-generate" onClick={handleGenerate} disabled={loading}>
+                <button className="headshot-btn-generate" onClick={handleRegenerate} disabled={loading}>
                   ↻ Regenerate
                 </button>
               </div>
             )}
-
-            <p className="headshot-tip">
-              Tip: Use this stipple image in your Champion Post for the full effect.
-            </p>
           </>
         )}
       </div>
