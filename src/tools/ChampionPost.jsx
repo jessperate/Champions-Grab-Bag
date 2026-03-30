@@ -44,7 +44,6 @@ export default function ChampionPost() {
     loadFonts().then(() => setFontsReady(true)).catch(() => {})
   }, [])
 
-  // Preload the laurel-wreath background image
   useEffect(() => {
     const img = new Image()
     img.onload = () => { photoBgImageRef.current = img; setSettings(prev => ({ ...prev })) }
@@ -62,27 +61,28 @@ export default function ChampionPost() {
     img.src = dataUrl
   }, [update])
 
-  const handlePhotoChange = useCallback((dataUrl) => {
+  const handlePhotoChange = useCallback(async (dataUrl) => {
+    if (!dataUrl) {
+      originalPhotoUrlRef.current = null
+      stipplePhotoUrlRef.current = null
+      setUsingStipple(false)
+      setStippleError(null)
+      setStippleLoading(false)
+      loadPhotoIntoCanvas(null)
+      return
+    }
+
+    // Show original immediately
     originalPhotoUrlRef.current = dataUrl
     stipplePhotoUrlRef.current = null
     setUsingStipple(false)
     setStippleError(null)
     loadPhotoIntoCanvas(dataUrl)
-  }, [loadPhotoIntoCanvas])
 
-  const handleApplyStipple = useCallback(async () => {
-    const original = originalPhotoUrlRef.current
-    if (!original) return
-    // Use cached stipple if already generated
-    if (stipplePhotoUrlRef.current) {
-      loadPhotoIntoCanvas(stipplePhotoUrlRef.current)
-      setUsingStipple(true)
-      return
-    }
+    // Auto-run stipple in background
     setStippleLoading(true)
-    setStippleError(null)
     try {
-      const base64 = original.split(',')[1]
+      const base64 = dataUrl.split(',')[1]
       const res = await fetch('/api/headshot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -105,7 +105,13 @@ export default function ChampionPost() {
   const handleUseOriginal = useCallback(() => {
     loadPhotoIntoCanvas(originalPhotoUrlRef.current)
     setUsingStipple(false)
-    setStippleError(null)
+  }, [loadPhotoIntoCanvas])
+
+  const handleUseStipple = useCallback(() => {
+    if (stipplePhotoUrlRef.current) {
+      loadPhotoIntoCanvas(stipplePhotoUrlRef.current)
+      setUsingStipple(true)
+    }
   }, [loadPhotoIntoCanvas])
 
   const handleLogoChange = useCallback((dataUrl) => {
@@ -205,22 +211,33 @@ export default function ChampionPost() {
 
           {settings.champProfileImage && (
             <div className="field">
-              {!usingStipple ? (
-                <button
-                  className="btn-upload"
-                  onClick={handleApplyStipple}
-                  disabled={stippleLoading}
-                  style={{ opacity: stippleLoading ? 0.6 : 1 }}
-                >
-                  {stippleLoading ? '⏳ Generating stipple…' : '✦ Apply Stipple Effect'}
-                </button>
-              ) : (
-                <button className="btn-upload" onClick={handleUseOriginal}>
-                  ↺ Use Original Photo
-                </button>
+              {stippleLoading && (
+                <div style={{ fontSize: 11, color: 'var(--label)', marginBottom: 4 }}>
+                  ⏳ Generating stipple effect…
+                </div>
+              )}
+              {!stippleLoading && stipplePhotoUrlRef.current && (
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button
+                    className={`dim-btn${usingStipple ? ' active' : ''}`}
+                    style={{ flex: 1, fontSize: 11 }}
+                    onClick={handleUseStipple}
+                  >
+                    Stipple
+                  </button>
+                  <button
+                    className={`dim-btn${!usingStipple ? ' active' : ''}`}
+                    style={{ flex: 1, fontSize: 11 }}
+                    onClick={handleUseOriginal}
+                  >
+                    Original
+                  </button>
+                </div>
               )}
               {stippleError && (
-                <div style={{ fontSize: 11, color: '#cc3333', marginTop: 6 }}>{stippleError}</div>
+                <div style={{ fontSize: 11, color: '#cc3333', marginTop: 4 }}>
+                  ⚠ Stipple failed — using original
+                </div>
               )}
             </div>
           )}
