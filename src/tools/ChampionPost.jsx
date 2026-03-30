@@ -5,6 +5,23 @@ import { drawChampionPostCanvas } from '../utils/drawChampionPostCanvas'
 import '../components/Sidebar.css'
 import './ChampionPost.css'
 
+function compressImageToBase64(dataUrl, maxPx, quality) {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      const scale = Math.min(1, maxPx / Math.max(img.width, img.height))
+      const w = Math.round(img.width * scale)
+      const h = Math.round(img.height * scale)
+      const c = document.createElement('canvas')
+      c.width = w
+      c.height = h
+      c.getContext('2d').drawImage(img, 0, 0, w, h)
+      resolve(c.toDataURL('image/jpeg', quality).split(',')[1])
+    }
+    img.src = dataUrl
+  })
+}
+
 const DEFAULT_SETTINGS = {
   firstName:      'Lucy',
   lastName:       'Hoyle',
@@ -82,7 +99,7 @@ export default function ChampionPost() {
     // Auto-run stipple in background
     setStippleLoading(true)
     try {
-      const base64 = dataUrl.split(',')[1]
+      const base64 = await compressImageToBase64(dataUrl, 1024, 0.85)
       const res = await fetch('/api/headshot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -236,7 +253,7 @@ export default function ChampionPost() {
               )}
               {stippleError && (
                 <div style={{ fontSize: 11, color: '#cc3333', marginTop: 4 }}>
-                  ⚠ Stipple failed — using original
+                  ⚠ {stippleError}
                 </div>
               )}
             </div>
