@@ -56,6 +56,7 @@ async function compositeWithLaurel(stippleDataUrl) {
   ctx.beginPath()
   ctx.rect(0, 0, SIZE, SIZE)
   ctx.clip()
+  ctx.globalCompositeOperation = 'multiply'
   ctx.drawImage(stipple, px, py, iw, ih)
   ctx.restore()
 

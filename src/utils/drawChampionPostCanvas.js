@@ -64,6 +64,7 @@ function drawPhotoSide(ctx, x, y, w, h, profileImage, photoBgImage, M) {
     ctx.beginPath()
     ctx.rect(x, y, w, h)
     ctx.clip()
+    ctx.globalCompositeOperation = 'multiply'
     ctx.drawImage(profileImage, px, py, iw, ih)
     ctx.restore()
   }
