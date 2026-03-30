@@ -52,10 +52,10 @@ function drawPhotoSide(ctx, x, y, w, h, profileImage, photoBgImage, M) {
     ctx.restore()
   }
 
-  // Draw uploaded headshot centered, at 70% of the side dimensions so leaves frame it
+  // Draw uploaded headshot bottom-aligned, at 88% width so laurel wreath frames it
   if (profileImage) {
-    const photoW = w * 0.70
-    const photoH = h * 0.70
+    const photoW = w * 0.88
+    const photoH = h * 0.88
     const ps = Math.max(
       photoW / (profileImage.naturalWidth  || 1),
       photoH / (profileImage.naturalHeight || 1),
@@ -63,11 +63,11 @@ function drawPhotoSide(ctx, x, y, w, h, profileImage, photoBgImage, M) {
     const iw = profileImage.naturalWidth  * ps
     const ih = profileImage.naturalHeight * ps
     const px = x + (w - iw) / 2
-    const py = y + (h - ih) / 2
+    const py = y + h - ih
 
     ctx.save()
     ctx.beginPath()
-    ctx.rect(x + (w - photoW) / 2, y + (h - photoH) / 2, photoW, photoH)
+    ctx.rect(x + (w - photoW) / 2, y + h - photoH, photoW, photoH)
     ctx.clip()
     ctx.drawImage(profileImage, px, py, iw, ih)
     ctx.restore()
