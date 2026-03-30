@@ -13,10 +13,11 @@ export default async function handler(req, res) {
   if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY environment variable is not set' })
 
   const prompt =
-    'Transform this photo into a black and white stipple/engraving illustration effect. ' +
+    'Transform this photo into a black and white stipple/engraving illustration effect with a fully transparent background. ' +
+    'Remove all background elements completely — only the person should remain. ' +
     'Create a high-contrast stipple portrait with fine dot patterns for shading, crosshatching for darker areas, ' +
-    'and clean white highlights. The style should look like a detailed editorial engraving or vintage portrait illustration. ' +
-    'Output only the illustration, no background elements.'
+    'and clean transparent highlights. The style should look like a detailed editorial engraving or vintage portrait illustration. ' +
+    'Output a PNG with a transparent background containing only the stipple illustration of the person.'
 
   const requestBody = {
     contents: [
