@@ -52,22 +52,17 @@ function drawPhotoSide(ctx, x, y, w, h, profileImage, photoBgImage, M) {
     ctx.restore()
   }
 
-  // Draw uploaded headshot bottom-aligned, at 88% width so laurel wreath frames it
+  // Draw uploaded headshot: scale to fill frame width, top-aligned so face shows prominently
   if (profileImage) {
-    const photoW = w * 0.88
-    const photoH = h * 0.88
-    const ps = Math.max(
-      photoW / (profileImage.naturalWidth  || 1),
-      photoH / (profileImage.naturalHeight || 1),
-    )
-    const iw = profileImage.naturalWidth  * ps
-    const ih = profileImage.naturalHeight * ps
+    const scale = (w * 0.95) / (profileImage.naturalWidth || 1)
+    const iw = profileImage.naturalWidth  * scale
+    const ih = profileImage.naturalHeight * scale
     const px = x + (w - iw) / 2
-    const py = y + h - ih
+    const py = y + h * 0.05
 
     ctx.save()
     ctx.beginPath()
-    ctx.rect(x + (w - photoW) / 2, y + h - photoH, photoW, photoH)
+    ctx.rect(x, y, w, h)
     ctx.clip()
     ctx.drawImage(profileImage, px, py, iw, ih)
     ctx.restore()
