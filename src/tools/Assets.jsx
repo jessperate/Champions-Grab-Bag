@@ -125,6 +125,7 @@ export default function Assets() {
   const ijProfileImageRef    = useRef(null)
   const annProfileImageRef   = useRef(null)
   const annPhotoBgRef        = useRef(null)
+  const annWreathRef         = useRef(null)
   const annCompanyLogoRef    = useRef(null)
   const annOriginalUrlRef    = useRef(null)
   const annStippleUrlRef     = useRef(null)
@@ -172,6 +173,12 @@ export default function Assets() {
     const bg = new Image()
     bg.onload = () => { annPhotoBgRef.current = bg; setSettings(prev => ({ ...prev })) }
     bg.src = '/ChampionPhotoBackground.png'
+  }, [])
+
+  useEffect(() => {
+    const w = new Image()
+    w.onload = () => { annWreathRef.current = w; setSettings(prev => ({ ...prev })) }
+    w.src = '/ChampionWordmarkWreath.svg'
   }, [])
 
   const update = useCallback((key, value) => {
@@ -292,7 +299,7 @@ export default function Assets() {
   }, [update])
 
   const draw = useCallback((canvas, s) => {
-    if (s.templateType === 'announcement')   drawAnnouncementCanvas(canvas, s, fontsReady, annProfileImageRef.current, annPhotoBgRef.current, annCompanyLogoRef.current)
+    if (s.templateType === 'announcement')   drawAnnouncementCanvas(canvas, s, fontsReady, annProfileImageRef.current, annPhotoBgRef.current, annCompanyLogoRef.current, annWreathRef.current)
     else if (s.templateType === 'twitter')   drawTwitterCanvas(canvas, s, fontsReady, profileImageRef.current, floraliaDotsRef.current)
     else if (s.templateType === 'richquote') drawRichQuoteCanvas(canvas, s, fontsReady, richProfileImageRef.current, richCompanyLogoRef.current)
     else if (s.templateType === 'titlecard') drawTitleCardCanvas(canvas, s, fontsReady, floraliaDotsRef.current)

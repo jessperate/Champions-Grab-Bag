@@ -1,41 +1,3 @@
-// ── Leaf helpers
-function _drawLeaf(ctx, cx, cy, leafW, leafH, angle) {
-  ctx.save()
-  ctx.translate(cx, cy)
-  ctx.rotate(angle)
-  ctx.beginPath()
-  ctx.moveTo(0, -leafH / 2)
-  ctx.bezierCurveTo( leafW / 2, -leafH / 4,  leafW / 2, leafH / 4, 0,  leafH / 2)
-  ctx.bezierCurveTo(-leafW / 2,  leafH / 4, -leafW / 2, -leafH / 4, 0, -leafH / 2)
-  ctx.closePath()
-  ctx.fill()
-  ctx.restore()
-}
-
-function _drawLeafArc(ctx, cx, cy, radius, startAngle, endAngle, count, side, leafW, leafH) {
-  for (let i = 0; i < count; i++) {
-    const t     = i / (count - 1)
-    const angle = startAngle + t * (endAngle - startAngle)
-    const lx    = cx + Math.cos(angle) * radius
-    const ly    = cy + Math.sin(angle) * radius
-    const la    = angle + (side === 'left' ? -Math.PI / 2 : Math.PI / 2) + Math.PI / 2
-    _drawLeaf(ctx, lx, ly, leafW, leafH, la)
-  }
-}
-
-function drawWreath(ctx, cx, cy, size, color) {
-  ctx.fillStyle = color
-  const leafW  = size * 0.10
-  const leafH  = size * 0.20
-  const radius = size * 0.35
-  const n      = 9
-  _drawLeafArc(ctx, cx, cy, radius, (210 * Math.PI) / 180, (330 * Math.PI) / 180, n, 'left',  leafW, leafH)
-  _drawLeafArc(ctx, cx, cy, radius, (330 * Math.PI) / 180 + Math.PI, (210 * Math.PI) / 180 + Math.PI, n, 'right', leafW, leafH)
-  const by = cy + size * 0.34
-  _drawLeaf(ctx, cx - size * 0.04, by, size * 0.08, size * 0.16, -0.2)
-  _drawLeaf(ctx, cx + size * 0.04, by, size * 0.08, size * 0.16,  0.2)
-}
-
 // ── Dot halftone
 function drawDotPattern(ctx, x, y, w, h, color, s) {
   const sp = Math.round(16 * s)
@@ -49,8 +11,8 @@ function drawDotPattern(ctx, x, y, w, h, color, s) {
     }
 }
 
-// ── Color modes
-const MODES = {
+// ── Color modes (exported so Assets.jsx can read wreathColor per mode)
+export const MODES = {
   'paper-light': {
     bg:          '#f8fffb',
     border:      '#008c44',
@@ -111,7 +73,7 @@ function drawBorder(ctx, cw, ch, color, s) {
 // ── Header: "airOps" centered + "Champion[wreath]" auto-sized
 // Figma: airOps box at x:784 y:91 w:351 h:112  (center x=959.5≈960)
 // Figma: header boundary at y:557
-function drawHeader(ctx, cw, ch, M, s, fontsReady, photoBgImage) {
+function drawHeader(ctx, cw, ch, M, s, fontsReady, wreathImage) {
   const sans  = fontsReady ? "'Saans', sans-serif"         : 'sans-serif'
   const serif = fontsReady ? "'Serrif VF', Georgia, serif" : 'Georgia, serif'
 
@@ -157,25 +119,27 @@ function drawHeader(ctx, cw, ch, M, s, fontsReady, photoBgImage) {
   ctx.textAlign    = 'left'
   ctx.fillText('Champi', marginX, baseline)
 
-  // Draw wreath in the 'o' slot
+  // Draw wreath in the 'o' slot using the Figma SVG asset
   const wreathSize = capH * 1.02
   const wreathCX   = marginX + prefixW + oW * 0.5
   const wreathCY   = baseline - capH * 0.5
 
   ctx.letterSpacing = '0px'
-  if (photoBgImage) {
-    // Use the actual laurel wreath PNG asset for a faithful Figma match
+  if (wreathImage) {
+    // Draw the SVG wreath, tinted to the current mode color via offscreen canvas
+    const sz = Math.ceil(wreathSize)
+    const off = document.createElement('canvas')
+    off.width = sz; off.height = sz
+    const offCtx = off.getContext('2d')
+    offCtx.drawImage(wreathImage, 0, 0, sz, sz)
+    // Recolor: keep the wreath shape but fill with wreathColor
+    // source-in: new fill shows only where existing (wreath) pixels are
+    offCtx.globalCompositeOperation = 'source-in'
+    offCtx.fillStyle = M.wreathColor
+    offCtx.fillRect(0, 0, sz, sz)
     ctx.save()
-    ctx.drawImage(
-      photoBgImage,
-      wreathCX - wreathSize / 2,
-      wreathCY - wreathSize / 2,
-      wreathSize,
-      wreathSize
-    )
+    ctx.drawImage(off, wreathCX - wreathSize / 2, wreathCY - wreathSize / 2, wreathSize, wreathSize)
     ctx.restore()
-  } else {
-    drawWreath(ctx, wreathCX, wreathCY, wreathSize, M.wreathColor)
   }
   ctx.letterSpacing = `${(-fontSize * 0.01).toFixed(2)}px`
 
@@ -331,7 +295,9 @@ function drawTextPanel(ctx, cw, M, s, fontsReady, settings, companyLogoImage) {
 }
 
 // ── Main export
-export function drawAnnouncementCanvas(canvas, settings, fontsReady, profileImage, photoBgImage, companyLogoImage) {
+// wreathImage: pre-loaded Image of ChampionWordmarkWreath.svg (for the 'o' slot)
+// photoBgImage: pre-loaded Image of ChampionPhotoBackground.png (for the photo card overlay)
+export function drawAnnouncementCanvas(canvas, settings, fontsReady, profileImage, photoBgImage, companyLogoImage, wreathImage) {
   const {
     annColorMode = 'paper-light',
     dims         = { w: 1920, h: 1080 },
@@ -356,10 +322,10 @@ export function drawAnnouncementCanvas(canvas, settings, fontsReady, profileImag
   // Decorative border (Figma: x:30 y:30 w:1856 h:1018 stroke:#008C44)
   drawBorder(ctx, cw, ch, M.border, s)
 
-  // Header
-  drawHeader(ctx, cw, ch, M, s, fontsReady, photoBgImage)
+  // Header (uses wreathImage for the 'o' slot)
+  drawHeader(ctx, cw, ch, M, s, fontsReady, wreathImage)
 
-  // Photo card
+  // Photo card (uses photoBgImage for the laurel overlay)
   drawPhotoCard(ctx, M, s, profileImage, photoBgImage)
 
   // Text panel
