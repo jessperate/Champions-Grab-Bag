@@ -27,13 +27,18 @@ const DIMS = [
 ]
 
 export default function ChampionPost() {
-  const [settings, setSettings]     = useState({ ...DEFAULT_SETTINGS })
-  const [fontsReady, setFontsReady] = useState(false)
-  const profileImageRef             = useRef(null)
-  const photoBgImageRef             = useRef(null)
-  const companyLogoRef              = useRef(null)
-  const photoInputRef               = useRef(null)
-  const logoInputRef                = useRef(null)
+  const [settings, setSettings]         = useState({ ...DEFAULT_SETTINGS })
+  const [fontsReady, setFontsReady]     = useState(false)
+  const [stippleLoading, setStippleLoading] = useState(false)
+  const [stippleError, setStippleError] = useState(null)
+  const [usingStipple, setUsingStipple] = useState(false)
+  const profileImageRef                 = useRef(null)
+  const photoBgImageRef                 = useRef(null)
+  const companyLogoRef                  = useRef(null)
+  const photoInputRef                   = useRef(null)
+  const logoInputRef                    = useRef(null)
+  const originalPhotoUrlRef             = useRef(null)
+  const stipplePhotoUrlRef              = useRef(null)
 
   useEffect(() => {
     loadFonts().then(() => setFontsReady(true)).catch(() => {})
@@ -50,12 +55,58 @@ export default function ChampionPost() {
     setSettings(prev => ({ ...prev, [key]: value }))
   }, [])
 
-  const handlePhotoChange = useCallback((dataUrl) => {
+  const loadPhotoIntoCanvas = useCallback((dataUrl) => {
     if (!dataUrl) { profileImageRef.current = null; update('champProfileImage', null); return }
     const img = new Image()
     img.onload = () => { profileImageRef.current = img; update('champProfileImage', dataUrl) }
     img.src = dataUrl
   }, [update])
+
+  const handlePhotoChange = useCallback((dataUrl) => {
+    originalPhotoUrlRef.current = dataUrl
+    stipplePhotoUrlRef.current = null
+    setUsingStipple(false)
+    setStippleError(null)
+    loadPhotoIntoCanvas(dataUrl)
+  }, [loadPhotoIntoCanvas])
+
+  const handleApplyStipple = useCallback(async () => {
+    const original = originalPhotoUrlRef.current
+    if (!original) return
+    // Use cached stipple if already generated
+    if (stipplePhotoUrlRef.current) {
+      loadPhotoIntoCanvas(stipplePhotoUrlRef.current)
+      setUsingStipple(true)
+      return
+    }
+    setStippleLoading(true)
+    setStippleError(null)
+    try {
+      const base64 = original.split(',')[1]
+      const res = await fetch('/api/headshot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: base64 }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`)
+      if (!data.imageBase64) throw new Error('No image returned')
+      const stippleUrl = `data:image/png;base64,${data.imageBase64}`
+      stipplePhotoUrlRef.current = stippleUrl
+      loadPhotoIntoCanvas(stippleUrl)
+      setUsingStipple(true)
+    } catch (e) {
+      setStippleError(e.message)
+    } finally {
+      setStippleLoading(false)
+    }
+  }, [loadPhotoIntoCanvas])
+
+  const handleUseOriginal = useCallback(() => {
+    loadPhotoIntoCanvas(originalPhotoUrlRef.current)
+    setUsingStipple(false)
+    setStippleError(null)
+  }, [loadPhotoIntoCanvas])
 
   const handleLogoChange = useCallback((dataUrl) => {
     if (!dataUrl) { companyLogoRef.current = null; update('champCompanyLogo', null); return }
@@ -151,6 +202,28 @@ export default function ChampionPost() {
               </button>
             )}
           </div>
+
+          {settings.champProfileImage && (
+            <div className="field">
+              {!usingStipple ? (
+                <button
+                  className="btn-upload"
+                  onClick={handleApplyStipple}
+                  disabled={stippleLoading}
+                  style={{ opacity: stippleLoading ? 0.6 : 1 }}
+                >
+                  {stippleLoading ? '⏳ Generating stipple…' : '✦ Apply Stipple Effect'}
+                </button>
+              ) : (
+                <button className="btn-upload" onClick={handleUseOriginal}>
+                  ↺ Use Original Photo
+                </button>
+              )}
+              {stippleError && (
+                <div style={{ fontSize: 11, color: '#cc3333', marginTop: 6 }}>{stippleError}</div>
+              )}
+            </div>
+          )}
 
           <div className="div" />
 
