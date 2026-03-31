@@ -70,27 +70,44 @@ function drawBorder(ctx, cw, ch, color, s) {
   ctx.strokeRect(inset, inset, cw - inset * 2, ch - inset * 2)
 }
 
-// ── Header: "airOps" centered + "Champion[wreath]" auto-sized
+// ── Header: "airOps" logo centered + "Champion[wreath]" auto-sized
 // Figma: airOps box at x:784 y:91 w:351 h:112  (center x=959.5≈960)
 // Figma: header boundary at y:557
-function drawHeader(ctx, cw, ch, M, s, fontsReady, wreathImage) {
+function drawHeader(ctx, cw, ch, M, s, fontsReady, wreathImage, airOpsLogoImage) {
   const sans  = fontsReady ? "'Saans', sans-serif"         : 'sans-serif'
   const serif = fontsReady ? "'Serrif VF', Georgia, serif" : 'Georgia, serif'
 
   ctx.fillStyle = M.bg
   ctx.fillRect(0, 0, cw, Math.round(560 * s))
 
-  // ── "airOps" — centered, vertically centered in Figma box (y:91 h:112)
+  // ── "airOps" logo — centered in Figma box (x:784 y:91 w:351 h:112)
+  const airBoxX = Math.round(784 * s)
   const airBoxY = Math.round(91  * s)
+  const airBoxW = Math.round(351 * s)
   const airBoxH = Math.round(112 * s)
-  const airSz   = Math.round(72  * s)
-  ctx.font          = `500 ${airSz}px ${sans}`
-  ctx.letterSpacing = `${(-airSz * 0.005).toFixed(2)}px`
-  ctx.fillStyle     = M.airopsText
-  ctx.textBaseline  = 'middle'
-  ctx.textAlign     = 'center'
-  ctx.fillText('airOps', cw / 2, airBoxY + airBoxH / 2)
-  ctx.letterSpacing = '0px'
+
+  if (airOpsLogoImage) {
+    // Scale logo to fit within the box while preserving aspect ratio
+    const logoNW = airOpsLogoImage.naturalWidth  || 352
+    const logoNH = airOpsLogoImage.naturalHeight || 113
+    const logoA  = logoNW / logoNH
+    let lw = airBoxW
+    let lh = lw / logoA
+    if (lh > airBoxH) { lh = airBoxH; lw = lh * logoA }
+    const lx = airBoxX + (airBoxW - lw) / 2
+    const ly = airBoxY + (airBoxH - lh) / 2
+    ctx.drawImage(airOpsLogoImage, lx, ly, lw, lh)
+  } else {
+    // Fallback: text
+    const airSz = Math.round(72 * s)
+    ctx.font          = `500 ${airSz}px ${sans}`
+    ctx.letterSpacing = `${(-airSz * 0.005).toFixed(2)}px`
+    ctx.fillStyle     = M.airopsText
+    ctx.textBaseline  = 'middle'
+    ctx.textAlign     = 'center'
+    ctx.fillText('airOps', cw / 2, airBoxY + airBoxH / 2)
+    ctx.letterSpacing = '0px'
+  }
 
   // ── "Champion[wreath]" — auto-size to fill from x:29 to near right edge
   // baseline at y:540 (just above photo at y:557)
@@ -297,7 +314,7 @@ function drawTextPanel(ctx, cw, M, s, fontsReady, settings, companyLogoImage) {
 // ── Main export
 // wreathImage: pre-loaded Image of ChampionWordmarkWreath.svg (for the 'o' slot)
 // photoBgImage: pre-loaded Image of ChampionPhotoBackground.png (for the photo card overlay)
-export function drawAnnouncementCanvas(canvas, settings, fontsReady, profileImage, photoBgImage, companyLogoImage, wreathImage) {
+export function drawAnnouncementCanvas(canvas, settings, fontsReady, profileImage, photoBgImage, companyLogoImage, wreathImage, airOpsLogoImage) {
   const {
     annColorMode = 'paper-light',
     dims         = { w: 1920, h: 1080 },
@@ -322,8 +339,8 @@ export function drawAnnouncementCanvas(canvas, settings, fontsReady, profileImag
   // Decorative border (Figma: x:30 y:30 w:1856 h:1018 stroke:#008C44)
   drawBorder(ctx, cw, ch, M.border, s)
 
-  // Header (uses wreathImage for the 'o' slot)
-  drawHeader(ctx, cw, ch, M, s, fontsReady, wreathImage)
+  // Header (uses wreathImage for the 'o' slot, airOpsLogoImage for the logo)
+  drawHeader(ctx, cw, ch, M, s, fontsReady, wreathImage, airOpsLogoImage)
 
   // Photo card (uses photoBgImage for the laurel overlay)
   drawPhotoCard(ctx, M, s, profileImage, photoBgImage)
