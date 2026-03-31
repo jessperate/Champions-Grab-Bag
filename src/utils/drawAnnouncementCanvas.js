@@ -77,9 +77,6 @@ function drawHeader(ctx, cw, ch, M, s, fontsReady, wreathImage, airOpsLogoImage)
   const sans  = fontsReady ? "'Saans', sans-serif"         : 'sans-serif'
   const serif = fontsReady ? "'Serrif VF', Georgia, serif" : 'Georgia, serif'
 
-  ctx.fillStyle = M.bg
-  ctx.fillRect(0, 0, cw, Math.round(560 * s))
-
   // ── "airOps" logo — centered in Figma box (x:784 y:91 w:351 h:112)
   const airBoxX = Math.round(784 * s)
   const airBoxY = Math.round(91  * s)
@@ -185,16 +182,18 @@ function drawPhotoCard(ctx, M, s, profileImage, photoBgImage) {
   drawDotPattern(ctx, px, py, pw, ph, M.dotColor, s)
   ctx.restore()
 
-  // Stippled headshot
+  // Stippled headshot — cover-fill the card, centered
   if (profileImage) {
-    const imgScale = (pw * 0.95) / (profileImage.naturalWidth || 1)
-    const iw = profileImage.naturalWidth  * imgScale
-    const ih = profileImage.naturalHeight * imgScale
+    const iA = (profileImage.naturalWidth || 1) / (profileImage.naturalHeight || 1)
+    const cA = pw / ph
+    let iw, ih
+    if (iA > cA) { ih = ph; iw = ph * iA }
+    else          { iw = pw; ih = pw / iA }
     ctx.save()
     ctx.beginPath()
     ctx.rect(px, py, pw, ph)
     ctx.clip()
-    ctx.drawImage(profileImage, px + (pw - iw) / 2, py + ph * 0.05, iw, ih)
+    ctx.drawImage(profileImage, px + (pw - iw) / 2, py + (ph - ih) / 2, iw, ih)
     ctx.restore()
   }
 
