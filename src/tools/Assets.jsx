@@ -404,9 +404,8 @@ export default function Assets() {
                 style={{ display: 'none' }}
                 onChange={e => {
                   const file = e.target.files?.[0]; if (!file) return
-                  const reader = new FileReader()
-                  reader.onload = ev => handleAnnPhotoChange(ev.target.result)
-                  reader.readAsDataURL(file); e.target.value = ''
+                  handleAnnPhotoChange(URL.createObjectURL(file))
+                  e.target.value = ''
                 }}
               />
               <button className="btn-upload" onClick={() => annPhotoInputRef.current?.click()}>
