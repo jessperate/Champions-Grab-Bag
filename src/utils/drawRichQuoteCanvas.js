@@ -1,4 +1,4 @@
-import { MODES, buildLogo, wrapText, smartQuotes } from './drawCanvas.js'
+import { MODES, buildLogo, buildLockup, wrapText, smartQuotes } from './drawCanvas.js'
 
 // ── Draw photo region: darkest brand color per colorway (M.ctaText) + hard-light blend
 function drawPhotoSection(ctx, profileImage, x, y, w, h, M) {
@@ -220,15 +220,13 @@ export function drawRichQuoteCanvas(canvas, settings, fontsReady, profileImage, 
     // AirOps logo — story-only (matches Figma)
     const logoH   = 72
     const logoW   = lockupImage ? Math.round(1179 * logoH / 291) : Math.round(784 * logoH / 252)
-    const logoBmp = lockupImage ? null : buildLogo(M.text, Math.round(logoH * dpr))
+    const logoBmp = lockupImage
+      ? buildLockup(lockupImage, M.text, Math.round(logoW * dpr), Math.round(logoH * dpr))
+      : buildLogo(M.text, Math.round(logoH * dpr))
     const logoY   = ch - 40 - logoH
     ctx.fillStyle = M.bg
     ctx.fillRect(40, logoY, logoW, logoH)
-    if (lockupImage) {
-      ctx.drawImage(lockupImage, 40, logoY, logoW, logoH)
-    } else {
-      ctx.drawImage(logoBmp, 40, logoY, logoW, logoH)
-    }
+    ctx.drawImage(logoBmp, 40, logoY, logoW, logoH)
 
     strokeLine(ctx, 0,      rowY,                   cw, rowY)
     strokeLine(ctx, splitX, rowY,                   splitX, rowY + headshotRowH)

@@ -17,6 +17,19 @@ export const LOGO_PATHS = [
   'M191.339 48.6576C176.921 48.6576 166.578 38.4949 166.578 24.6368C166.578 10.7786 176.921 0 191.339 0C205.13 0 216.1 10.7786 216.1 24.6368C216.1 38.4949 205.13 48.6576 191.339 48.6576Z',
 ];
 
+// Recolor a lockup SVG image to a single flat color via source-in compositing.
+// Returns an offscreen canvas at pixel dimensions (w * dpr, h * dpr).
+export function buildLockup(lockupImage, color, w, h) {
+  const oc = document.createElement('canvas')
+  oc.width = w; oc.height = h
+  const c = oc.getContext('2d')
+  c.drawImage(lockupImage, 0, 0, w, h)
+  c.globalCompositeOperation = 'source-in'
+  c.fillStyle = color
+  c.fillRect(0, 0, w, h)
+  return oc
+}
+
 export function buildLogo(color, h) {
   const sw = 784, sh = 252, sc = h / sh;
   const oc = document.createElement('canvas');
@@ -206,7 +219,9 @@ export function drawCanvas(canvas, settings, fontsReady, lockupImage) {
   // ── Footer: logo (left) + CTA pill (right)
   const logoH   = 72;
   const logoW   = lockupImage ? Math.round(1179 * logoH / 291) : Math.round(784 * logoH / 252);
-  const logoBmp = lockupImage ? null : buildLogo(M.text, Math.round(logoH * dpr));
+  const logoBmp = lockupImage
+    ? buildLockup(lockupImage, M.text, Math.round(logoW * dpr), Math.round(logoH * dpr))
+    : buildLogo(M.text, Math.round(logoH * dpr));
   // Non-story: logo bottom aligns with guide x (40px from edge)
   // Story: keep existing vertical positioning
   const logoY = isStory
@@ -214,11 +229,7 @@ export function drawCanvas(canvas, settings, fontsReady, lockupImage) {
     : ch - pad - logoH;
   ctx.fillStyle = M.bg;
   ctx.fillRect(pad + 2, logoY, logoW, logoH);
-  if (lockupImage) {
-    ctx.drawImage(lockupImage, pad + 2, logoY, logoW, logoH);
-  } else {
-    ctx.drawImage(logoBmp, pad + 2, logoY, logoW, logoH);
-  }
+  ctx.drawImage(logoBmp, pad + 2, logoY, logoW, logoH);
 
   if (showCTA) {
     drawCtaPill(ctx, cw - pad, ch - padY, ctaText, M.ctaText, sans);

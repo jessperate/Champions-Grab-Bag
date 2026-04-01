@@ -1,4 +1,4 @@
-import { MODES, buildLogo, wrapText, drawCtaPill } from './drawCanvas.js'
+import { MODES, buildLogo, buildLockup, wrapText, drawCtaPill } from './drawCanvas.js'
 import { STIPPLE_COLORS } from './drawFleurons.js'
 
 // Dark variants — bg is one visible step up from near-black, logo uses a light tint
@@ -279,7 +279,9 @@ export function drawTwitterCanvas(canvas, settings, fontsReady, profileImage, fl
   // Story: 40px below the bottom edge of the white box
   // Build at dpr× so the bitmap is sharp in the scaled context; draw at CSS dimensions.
   const logoW   = lockupImage ? Math.round(1179 * logoH / 291) : Math.round(784 * logoH / 252)
-  const logoBmp = lockupImage ? null : buildLogo(logoColor, Math.round(logoH * dpr))
+  const logoBmp = lockupImage
+    ? buildLockup(lockupImage, logoColor, Math.round(logoW * dpr), Math.round(logoH * dpr))
+    : buildLogo(logoColor, Math.round(logoH * dpr))
   const footerY = isStory ? boxY + boxH + 40 : ch - guideX - logoH
   // Always clear background behind logo. When decoration is active (either style), snap the
   // fill rect to the dot grid so no dots are partially clipped at its edges.
@@ -294,11 +296,7 @@ export function drawTwitterCanvas(canvas, settings, fontsReady, profileImage, fl
   } else {
     ctx.fillRect(logoX, footerY, logoW, logoH)
   }
-  if (lockupImage) {
-    ctx.drawImage(lockupImage, logoX, footerY, logoW, logoH)
-  } else {
-    ctx.drawImage(logoBmp, logoX, footerY, logoW, logoH)
-  }
+  ctx.drawImage(logoBmp, logoX, footerY, logoW, logoH)
 
   // ── CTA pill (right-aligned to guide, bottom-aligned with logo)
   if (showCTA && ctaText) {
