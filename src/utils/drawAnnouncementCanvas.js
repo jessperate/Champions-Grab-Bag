@@ -164,12 +164,12 @@ function drawHeader(ctx, cw, ch, M, s, fontsReady, wreathImage, airOpsLogoImage)
   ctx.letterSpacing = '0px'
 }
 
-// ── Photo card — full canvas height
+// ── Photo card — Figma: x:479 y:560 w:481 h:488
 function drawPhotoCard(ctx, M, s, profileImage, ch) {
   const px = Math.round(479 * s)
-  const py = 0
+  const py = Math.round(560 * s)
   const pw = Math.round(481 * s)
-  const ph = ch
+  const ph = Math.round(488 * s)
 
   // Card background
   ctx.fillStyle = M.bg
