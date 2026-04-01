@@ -107,14 +107,14 @@ async function compositeWithLaurel(stippleDataUrl) {
   else              { bw = SIZE; bh = SIZE / bgAspect }
   ctx.drawImage(dotsOnly, (SIZE - bw) / 2, (SIZE - bh) / 2, bw, bh)
 
-  // Layer 3: Stipple portrait with white background removed
-  const stippleNoBg = removeWhiteBackground(stipple)
+  // Layer 3: Stipple portrait — drawn with its white bg intact so it
+  // cleanly covers the dots underneath (no bleed-through on skin tones)
   const scale = (SIZE * 0.95) / (stipple.naturalWidth || 1)
   const iw = stipple.naturalWidth  * scale
   const ih = stipple.naturalHeight * scale
   const px = (SIZE - iw) / 2
   const py = SIZE * 0.05
-  ctx.drawImage(stippleNoBg, px, py, iw, ih)
+  ctx.drawImage(stipple, px, py, iw, ih)
 
   // Layer 4: Green laurel leaves in the foreground
   const laurelOnly = extractGreenPixels(laurel)
