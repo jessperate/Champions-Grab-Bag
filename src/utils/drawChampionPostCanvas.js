@@ -1,4 +1,4 @@
-import { wrapText } from './drawCanvas.js'
+import { wrapText, buildLockup } from './drawCanvas.js'
 
 // ── Color modes
 const CHAMP_MODES = {
@@ -50,27 +50,10 @@ function drawPhotoSide(ctx, x, y, w, h, profileImage, photoBgImage, M) {
     ctx.restore()
   }
 
-  // Draw laurel wreath in foreground so leaves appear over the stipple
-  if (photoBgImage) {
-    const bgAspect   = photoBgImage.naturalWidth / photoBgImage.naturalHeight
-    const sideAspect = w / h
-    let bw, bh
-    if (bgAspect > sideAspect) {
-      bh = h; bw = h * bgAspect
-    } else {
-      bw = w; bh = w / bgAspect
-    }
-    ctx.save()
-    ctx.beginPath()
-    ctx.rect(x, y, w, h)
-    ctx.clip()
-    ctx.drawImage(photoBgImage, x + (w - bw) / 2, y + (h - bh) / 2, bw, bh)
-    ctx.restore()
-  }
 }
 
 // ── Text side
-function drawTextSide(ctx, x, y, w, h, settings, M, scale, fontsReady, companyLogoImage) {
+function drawTextSide(ctx, x, y, w, h, settings, M, scale, fontsReady, companyLogoImage, lockupImage, dpr) {
   const {
     firstName     = 'Lucy',
     lastName      = 'Hoyle',
@@ -135,8 +118,8 @@ function drawTextSide(ctx, x, y, w, h, settings, M, scale, fontsReady, companyLo
   const quoteY = labelY + labelSz * 1.3 + Math.round(16 * scale)
 
   // 7. Quote text — Serrif VF 400, ~52px, -1% tracking, line-height 1.15
-  // Reserve space at bottom for logo if present
-  const logoReserve = companyLogoImage ? Math.round(80 * scale) : 0
+  // Reserve space at bottom for lockup and/or company logo
+  const logoReserve = (lockupImage || companyLogoImage) ? Math.round(80 * scale) : 0
   const quoteSzBase = Math.round(52 * scale)
   const quoteMaxH   = h - (quoteY - y) - pad - logoReserve - Math.round(24 * scale)
 
@@ -159,23 +142,33 @@ function drawTextSide(ctx, x, y, w, h, settings, M, scale, fontsReady, companyLo
   })
   ctx.letterSpacing = '0px'
 
-  // 8. Company logo — bottom-left aligned
+  // 8. Bottom row: lockup (left) + company logo (right of lockup if present)
+  const bottomH = Math.round(56 * scale)
+  const bottomY = y + h - pad - bottomH
+  let afterLockupX = x + pad
+
+  if (lockupImage) {
+    const lkW = Math.round(1179 * bottomH / 291)
+    const lkBmp = buildLockup(lockupImage, M.text, Math.round(lkW * (dpr ?? 1)), Math.round(bottomH * (dpr ?? 1)))
+    ctx.drawImage(lkBmp, x + pad, bottomY, lkW, bottomH)
+    afterLockupX = x + pad + lkW + Math.round(24 * scale)
+  }
+
   if (companyLogoImage) {
-    const maxLogoH = Math.round(56 * scale)
-    const maxLogoW = Math.round(240 * scale)
+    const maxLogoH = bottomH
+    const maxLogoW = Math.round(200 * scale)
     const logoAspect = (companyLogoImage.naturalWidth || 1) / (companyLogoImage.naturalHeight || 1)
     let lw = Math.min(maxLogoW, maxLogoH * logoAspect)
     let lh = lw / logoAspect
     if (lh > maxLogoH) { lh = maxLogoH; lw = lh * logoAspect }
-    const logoY = y + h - pad - lh
-    ctx.drawImage(companyLogoImage, x + pad, logoY, lw, lh)
+    ctx.drawImage(companyLogoImage, afterLockupX, bottomY + (bottomH - lh) / 2, lw, lh)
   }
 
   ctx.restore()
 }
 
 // ── Main export
-export function drawChampionPostCanvas(canvas, settings, fontsReady, profileImage, photoBgImage, companyLogoImage) {
+export function drawChampionPostCanvas(canvas, settings, fontsReady, profileImage, photoBgImage, companyLogoImage, lockupImage) {
   const {
     champColorMode = 'paper-light',
     champFlip      = false,
@@ -207,5 +200,5 @@ export function drawChampionPostCanvas(canvas, settings, fontsReady, profileImag
   drawPhotoSide(ctx, photoX, 0, halfW, ch, profileImage, photoBgImage, M)
 
   // Draw text side
-  drawTextSide(ctx, textX, 0, halfW, ch, settings, M, s, fontsReady, companyLogoImage)
+  drawTextSide(ctx, textX, 0, halfW, ch, settings, M, s, fontsReady, companyLogoImage, lockupImage, dpr)
 }

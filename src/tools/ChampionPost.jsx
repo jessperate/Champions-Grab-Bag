@@ -60,6 +60,7 @@ export default function ChampionPost() {
   const profileImageRef                 = useRef(null)
   const photoBgImageRef                 = useRef(null)
   const companyLogoRef                  = useRef(null)
+  const lockupImageRef                  = useRef(null)
   const photoInputRef                   = useRef(null)
   const logoInputRef                    = useRef(null)
   const originalPhotoUrlRef             = useRef(null)
@@ -73,6 +74,12 @@ export default function ChampionPost() {
     const img = new Image()
     img.onload = () => { photoBgImageRef.current = img; setSettings(prev => ({ ...prev })) }
     img.src = '/ChampionPhotoBackground.png'
+  }, [])
+
+  useEffect(() => {
+    const img = new Image()
+    img.onload = () => { lockupImageRef.current = img; setSettings(prev => ({ ...prev })) }
+    img.src = '/ao_champion_lockup.svg'
   }, [])
 
   const update = useCallback((key, value) => {
@@ -148,7 +155,7 @@ export default function ChampionPost() {
 
   const draw = useCallback((canvas, s) => {
     const sm = s.brandColor ? { ...s, brandModes: generateBrandModes(s.brandColor) } : s
-    drawChampionPostCanvas(canvas, sm, fontsReady, profileImageRef.current, photoBgImageRef.current, companyLogoRef.current)
+    drawChampionPostCanvas(canvas, sm, fontsReady, profileImageRef.current, photoBgImageRef.current, companyLogoRef.current, lockupImageRef.current)
   }, [fontsReady])
 
   const exportJpeg = useCallback(() => {
