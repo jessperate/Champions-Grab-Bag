@@ -30,12 +30,14 @@ export function drawTwitterCanvas(canvas, settings, fontsReady, profileImage, fl
 
   const ctx  = canvas.getContext('2d')
   if (dpr !== 1) ctx.scale(dpr, dpr)
-  const isDark = DARK_MODE_KEYS.has(colorMode)
+  const isCustomDark = colorMode === 'custom-dark'
+  const isDark = DARK_MODE_KEYS.has(colorMode) || isCustomDark
+  const bm = settings.brandModes
   // Content inside the white box always uses the light base colours
-  const baseMode  = isDark ? colorMode.replace('dark-', '') : colorMode
-  const M         = MODES[baseMode] || MODES['green']
+  const baseMode  = isCustomDark ? 'custom-light' : (isDark ? colorMode.replace('dark-', '') : colorMode)
+  const M         = bm?.quote?.[baseMode] ?? MODES[baseMode] ?? MODES.green
   // Background, guides and logo use the dark variant when active
-  const TM        = isDark ? DARK_MODES[colorMode] : M
+  const TM        = isCustomDark ? (bm?.quote?.['custom-dark'] ?? M) : (isDark ? DARK_MODES[colorMode] : M)
   const bgColor   = TM.bg
   const lineColor = TM.lineColor
   const logoColor = isDark ? TM.logoColor : M.text

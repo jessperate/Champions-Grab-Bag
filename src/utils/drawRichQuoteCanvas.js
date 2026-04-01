@@ -172,7 +172,7 @@ export function drawRichQuoteCanvas(canvas, settings, fontsReady, profileImage, 
   const sans  = fontsReady ? "'Saans', sans-serif"                 : 'sans-serif'
   const mono  = fontsReady ? "'Saans Mono', 'DM Mono', monospace"  : 'monospace'
 
-  const M  = MODES[colorMode] ?? MODES['green']
+  const M  = settings.brandModes?.quote?.[colorMode] ?? MODES[colorMode] ?? MODES.green
 
   // ── Background
   ctx.fillStyle = M.bg

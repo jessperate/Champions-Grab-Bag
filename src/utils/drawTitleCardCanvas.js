@@ -67,9 +67,13 @@ export function drawTitleCardCanvas(canvas, settings, fontsReady, floralia) {
   const sans  = fontsReady ? "'Saans', sans-serif"                : 'sans-serif'
   const mono  = fontsReady ? "'Saans Mono', 'DM Mono', monospace" : 'monospace'
 
-  const isDark = colorMode in DARK_MODES
-  const M      = MODES[isDark ? colorMode.replace('dark-', '') : colorMode] ?? MODES['green']
-  const TM     = isDark ? DARK_MODES[colorMode] : M
+  const isCustomDark = colorMode === 'custom-dark'
+  const isCustom = colorMode.startsWith('custom-')
+  const isDark = (colorMode in DARK_MODES) || isCustomDark
+  const bm = settings.brandModes
+  const baseMode = isCustomDark ? 'custom-light' : (isDark ? colorMode.replace('dark-', '') : colorMode)
+  const M      = bm?.quote?.[baseMode] ?? MODES[baseMode] ?? MODES.green
+  const TM     = isCustomDark ? (bm?.quote?.['custom-dark'] ?? M) : (isDark ? DARK_MODES[colorMode] : M)
 
   // Resolved per-element colours
   const bg          = TM.bg
@@ -77,9 +81,15 @@ export function drawTitleCardCanvas(canvas, settings, fontsReady, floralia) {
   const logoColor   = isDark ? TM.logoColor   : M.text
   const textColor     = isDark ? TM.logoColor : M.text
   const headlineColor  = isDark ? M.bg         : M.text  // one step lighter in dark modes
-  const sansColor      = tcEmphasizeSans ? (EMPHASIZE_COLOR[colorMode] ?? EMPHASIZE_COLOR['green']) : headlineColor
-  const eyebrowBg   = isDark ? TM.eyebrowBg   : '#ffffff'
-  const eyebrowBd   = isDark ? TM.lineColor   : (EYEBROW_ACCENT[colorMode.replace('dark-', '')] ?? EYEBROW_ACCENT['green'])
+  const sansColor      = tcEmphasizeSans
+    ? (isCustom
+        ? (isCustomDark ? (bm?.emphasizeDark ?? M.lineColor) : (bm?.emphasizeLight ?? M.lineColor))
+        : (EMPHASIZE_COLOR[colorMode] ?? EMPHASIZE_COLOR['green']))
+    : headlineColor
+  const eyebrowBg   = isDark ? (TM.eyebrowBg ?? '#000000') : '#ffffff'
+  const eyebrowBd   = isDark
+    ? TM.lineColor
+    : (isCustom ? (bm?.eyebrowAccent ?? M.lineColor) : (EYEBROW_ACCENT[colorMode.replace('dark-', '')] ?? EYEBROW_ACCENT['green']))
   const eyebrowTxt  = eyebrowBd
 
   // ── Background

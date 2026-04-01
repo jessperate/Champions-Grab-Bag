@@ -39,7 +39,7 @@ export function drawIJoinedCanvas(canvas, settings, fontsReady, profileImage, fl
   const ctx = canvas.getContext('2d')
   if (dpr !== 1) ctx.scale(dpr, dpr)
 
-  const M     = IJ_MODES[ijMode] ?? IJ_MODES.night
+  const M     = settings.brandModes?.ijoined?.[ijMode] ?? IJ_MODES[ijMode] ?? IJ_MODES.night
   const sans  = fontsReady ? "'Saans', sans-serif"                : 'sans-serif'
   const mono  = fontsReady ? "'Saans Mono', 'DM Mono', monospace" : 'monospace'
   const serif = fontsReady ? "'Serrif VF', Georgia, serif"        : 'Georgia, serif'

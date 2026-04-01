@@ -466,3 +466,45 @@
   width: 100%;
   margin-bottom: 0;
 }
+
+/* ── Brand color input */
+.brand-color-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.brand-color-picker {
+  width: 32px;
+  height: 32px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.brand-color-picker::-webkit-color-swatch-wrapper { padding: 0; }
+.brand-color-picker::-webkit-color-swatch { border: none; border-radius: 4px; }
+.brand-color-hex {
+  flex: 1;
+  font-family: 'Saans Mono', 'DM Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+}
+
+/* ── Brand mode buttons (shown when brandColor is set) */
+.brand-mode-btn {
+  position: relative;
+  overflow: hidden;
+}
+.brand-mode-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--brand-color, #008c44);
+  opacity: 0.18;
+  pointer-events: none;
+}
+.brand-mode-btn.active::before { opacity: 0.32; }
+.dim-btn.brand-mode-btn::before { opacity: 0.15; }
+.dim-btn.brand-mode-btn.active::before { opacity: 0.28; }

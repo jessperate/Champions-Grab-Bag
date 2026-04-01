@@ -99,7 +99,7 @@ export function drawCanvas(canvas, settings, fontsReady) {
   const sans  = fontsReady ? "'Saans', sans-serif"                   : 'sans-serif';
   const mono  = fontsReady ? "'Saans Mono', 'DM Mono', monospace"    : 'monospace';
 
-  const M   = MODES[colorMode];
+  const M   = settings.brandModes?.quote?.[colorMode] ?? MODES[colorMode] ?? MODES.green;
   const pad = 40;
   const padY = isStory ? 240 : 40;
   const innerW = cw - pad * 2;

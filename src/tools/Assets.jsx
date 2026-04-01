@@ -8,6 +8,7 @@ import { drawTitleCardCanvas } from '../utils/drawTitleCardCanvas'
 import { drawIJoinedCanvas } from '../utils/drawIJoinedCanvas'
 import { drawAnnouncementCanvas } from '../utils/drawAnnouncementCanvas'
 import { generateFleuronFontDots } from '../utils/drawFleurons'
+import { generateBrandModes } from '../utils/brandPalette'
 import { IJ_MODE_LABELS } from '../utils/drawIJoinedCanvas'
 import '../components/Sidebar.css'
 
@@ -22,14 +23,16 @@ const TEMPLATES = [
 ]
 
 const MODE_LABELS = {
-  green:        'Green Paper',
-  pink:         'Pink Paper',
-  yellow:       'Yellow Paper',
-  blue:         'Blue Paper',
-  'dark-green': 'Dark Green',
-  'dark-pink':  'Dark Pink',
-  'dark-yellow':'Dark Yellow',
-  'dark-blue':  'Dark Blue',
+  green:          'Green Paper',
+  pink:           'Pink Paper',
+  yellow:         'Yellow Paper',
+  blue:           'Blue Paper',
+  'dark-green':   'Dark Green',
+  'dark-pink':    'Dark Pink',
+  'dark-yellow':  'Dark Yellow',
+  'dark-blue':    'Dark Blue',
+  'custom-light': 'Brand Light',
+  'custom-dark':  'Brand Dark',
 }
 
 const DIMS = [
@@ -43,6 +46,15 @@ const ANN_COLOR_MODES = [
   { key: 'paper-light', label: 'Paper Light' },
   { key: 'paper-dark',  label: 'Paper Dark'  },
   { key: 'mint',        label: 'Mint'         },
+]
+const ANN_BRAND_MODES = [
+  { key: 'custom-light', label: 'Brand Light' },
+  { key: 'custom-dark',  label: 'Brand Dark'  },
+  { key: 'custom-mint',  label: 'Brand Mint'  },
+]
+const IJ_BRAND_MODES  = [
+  { key: 'custom-light', label: 'Brand Light' },
+  { key: 'custom-dark',  label: 'Brand Dark'  },
 ]
 
 function compressImageToBase64(dataUrl, maxPx, quality) {
@@ -111,6 +123,7 @@ const DEFAULT_SETTINGS = {
   annRole:           'Senior Content Engineer',
   annColorMode:      'paper-light',
   annProfileImage:   null,
+  brandColor:        '',
   annCompanyLogo:    null,
 }
 
@@ -191,7 +204,7 @@ export default function Assets() {
   const update = useCallback((key, value) => {
     setSettings(prev => {
       const next = { ...prev, [key]: value }
-      if (key === 'templateType' && ['quote', 'richquote'].includes(value) && next.colorMode.startsWith('dark-')) {
+      if (key === 'templateType' && ['quote', 'richquote'].includes(value) && next.colorMode.startsWith('dark-') && !next.colorMode.startsWith('custom-')) {
         next.colorMode = next.colorMode.replace('dark-', '')
       }
       if (key === 'templateType' && (value === 'ijoined' || value === 'announcement')) {
@@ -306,12 +319,13 @@ export default function Assets() {
   }, [update])
 
   const draw = useCallback((canvas, s) => {
-    if (s.templateType === 'announcement')   drawAnnouncementCanvas(canvas, s, fontsReady, annProfileImageRef.current, annPhotoBgRef.current, annCompanyLogoRef.current, annWreathRef.current, annAirOpsLogoRef.current)
-    else if (s.templateType === 'twitter')   drawTwitterCanvas(canvas, s, fontsReady, profileImageRef.current, floraliaDotsRef.current)
-    else if (s.templateType === 'richquote') drawRichQuoteCanvas(canvas, s, fontsReady, richProfileImageRef.current, richCompanyLogoRef.current)
-    else if (s.templateType === 'titlecard') drawTitleCardCanvas(canvas, s, fontsReady, floraliaDotsRef.current)
-    else if (s.templateType === 'ijoined')   drawIJoinedCanvas(canvas, s, fontsReady, ijProfileImageRef.current, floraliaDotsRef.current)
-    else                                     drawCanvas(canvas, s, fontsReady)
+    const sm = s.brandColor ? { ...s, brandModes: generateBrandModes(s.brandColor) } : s
+    if (sm.templateType === 'announcement')   drawAnnouncementCanvas(canvas, sm, fontsReady, annProfileImageRef.current, annPhotoBgRef.current, annCompanyLogoRef.current, annWreathRef.current, annAirOpsLogoRef.current)
+    else if (sm.templateType === 'twitter')   drawTwitterCanvas(canvas, sm, fontsReady, profileImageRef.current, floraliaDotsRef.current)
+    else if (sm.templateType === 'richquote') drawRichQuoteCanvas(canvas, sm, fontsReady, richProfileImageRef.current, richCompanyLogoRef.current)
+    else if (sm.templateType === 'titlecard') drawTitleCardCanvas(canvas, sm, fontsReady, floraliaDotsRef.current)
+    else if (sm.templateType === 'ijoined')   drawIJoinedCanvas(canvas, sm, fontsReady, ijProfileImageRef.current, floraliaDotsRef.current)
+    else                                      drawCanvas(canvas, sm, fontsReady)
   }, [fontsReady, floraliaReady]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const exportJpeg = useCallback((w, h, filename) => {
@@ -477,6 +491,16 @@ export default function Assets() {
                 <button
                   key={m.key}
                   className={`dim-btn${settings.annColorMode === m.key ? ' active' : ''}`}
+                  onClick={() => update('annColorMode', m.key)}
+                >
+                  {m.label}
+                </button>
+              ))}
+              {settings.brandColor && ANN_BRAND_MODES.map(m => (
+                <button
+                  key={m.key}
+                  className={`dim-btn brand-mode-btn${settings.annColorMode === m.key ? ' active' : ''}`}
+                  style={{ '--brand-color': settings.brandColor }}
                   onClick={() => update('annColorMode', m.key)}
                 >
                   {m.label}
@@ -811,6 +835,16 @@ export default function Assets() {
                   {label}
                 </button>
               ))}
+              {settings.brandColor && IJ_BRAND_MODES.map(m => (
+                <button
+                  key={m.key}
+                  className={`mode-btn brand-mode-btn${settings.ijMode === m.key ? ' active' : ''}`}
+                  style={{ '--brand-color': settings.brandColor }}
+                  onClick={() => update('ijMode', m.key)}
+                >
+                  {m.label}
+                </button>
+              ))}
             </div>
             <div className="div" />
             <div className="sec">Decoration</div>
@@ -854,11 +888,47 @@ export default function Assets() {
                       {MODE_LABELS[m].split(' ')[0]}<br />{MODE_LABELS[m].split(' ')[1]}
                     </button>
                   ))}
+                  {settings.brandColor && ['custom-light', 'custom-dark'].map(m => (
+                    <button
+                      key={m}
+                      className={`mode-btn brand-mode-btn${settings.colorMode === m ? ' active' : ''}`}
+                      style={{ '--brand-color': settings.brandColor }}
+                      onClick={() => update('colorMode', m)}
+                    >
+                      {MODE_LABELS[m].split(' ')[0]}<br />{MODE_LABELS[m].split(' ')[1]}
+                    </button>
+                  ))}
                 </div>
               )
             })()}
             <div className="div" />
           </>}
+
+          {/* Brand Color */}
+          <div className="sec">Brand Color</div>
+          <div className="field brand-color-field">
+            <input
+              type="color"
+              className="brand-color-picker"
+              value={settings.brandColor || '#008c44'}
+              onChange={e => update('brandColor', e.target.value)}
+            />
+            <input
+              type="text"
+              className="brand-color-hex"
+              placeholder="#rrggbb"
+              value={settings.brandColor}
+              maxLength={7}
+              onChange={e => {
+                const v = e.target.value
+                update('brandColor', v)
+              }}
+            />
+            {settings.brandColor && (
+              <button className="btn-clear-photo" onClick={() => update('brandColor', '')}>✕</button>
+            )}
+          </div>
+          <div className="div" />
 
           {/* Export Size */}
           <div className="sec">Export Size</div>

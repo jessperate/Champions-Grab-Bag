@@ -329,7 +329,7 @@ export function drawAnnouncementCanvas(canvas, settings, fontsReady, profileImag
   const ctx = canvas.getContext('2d')
   if (dpr !== 1) ctx.scale(dpr, dpr)
 
-  const M = MODES[annColorMode] ?? MODES['paper-light']
+  const M = settings.brandModes?.announcement?.[annColorMode] ?? MODES[annColorMode] ?? MODES['paper-light']
 
   // Background
   ctx.fillStyle = M.bg
