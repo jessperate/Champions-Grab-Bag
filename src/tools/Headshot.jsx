@@ -29,13 +29,16 @@ function loadImage(src) {
 }
 
 async function compositeWithLaurel(stippleDataUrl) {
-  const stipple = await loadImage(stippleDataUrl)
+  const [laurel, stipple] = await Promise.all([
+    loadImage('/ChampionPhotoBackground.png'),
+    loadImage(stippleDataUrl),
+  ])
 
   const c = document.createElement('canvas')
   c.width = SIZE; c.height = SIZE
   const ctx = c.getContext('2d')
 
-  // White background
+  // White base required for multiply compositing to work correctly
   ctx.fillStyle = '#ffffff'
   ctx.fillRect(0, 0, SIZE, SIZE)
 
@@ -46,6 +49,16 @@ async function compositeWithLaurel(stippleDataUrl) {
   const px = (SIZE - iw) / 2
   const py = SIZE * 0.05
   ctx.drawImage(stipple, px, py, iw, ih)
+
+  // Overlay laurel with multiply: white areas of the PNG become transparent,
+  // so the stipple face shows through while the green leaves sit on top
+  ctx.globalCompositeOperation = 'multiply'
+  const bgAspect = laurel.naturalWidth / laurel.naturalHeight
+  let bw, bh
+  if (bgAspect > 1) { bh = SIZE; bw = SIZE * bgAspect }
+  else              { bw = SIZE; bh = SIZE / bgAspect }
+  ctx.drawImage(laurel, (SIZE - bw) / 2, (SIZE - bh) / 2, bw, bh)
+  ctx.globalCompositeOperation = 'source-over'
 
   return c.toDataURL('image/png')
 }
