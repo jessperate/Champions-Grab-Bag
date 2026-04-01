@@ -147,11 +147,16 @@ export default function Assets() {
   const annCompanyLogoRef    = useRef(null)
   const annOriginalUrlRef    = useRef(null)
   const annStippleUrlRef     = useRef(null)
+  const richOriginalUrlRef   = useRef(null)
+  const richStippleUrlRef    = useRef(null)
   const floraliaDotsRef      = useRef([])
   const [floraliaReady, setFloraliaReady] = useState(0)
   const [annStippleLoading, setAnnStippleLoading] = useState(false)
   const [annStippleError, setAnnStippleError]     = useState(null)
   const [annUsingStipple, setAnnUsingStipple]     = useState(false)
+  const [richStippleLoading, setRichStippleLoading] = useState(false)
+  const [richStippleError, setRichStippleError]     = useState(null)
+  const [richUsingStipple, setRichUsingStipple]     = useState(false)
 
   const fileInputRef      = useRef(null)
   const richPhotoInputRef = useRef(null)
@@ -238,12 +243,62 @@ export default function Assets() {
     img.src = dataUrl
   }, [update])
 
-  const handleRichProfileImageChange = useCallback((dataUrl) => {
+  const loadRichPhoto = useCallback((dataUrl) => {
     if (!dataUrl) { richProfileImageRef.current = null; update('richProfileImage', null); return }
     const img = new Image()
     img.onload = () => { richProfileImageRef.current = img; update('richProfileImage', dataUrl) }
     img.src = dataUrl
   }, [update])
+
+  const handleRichProfileImageChange = useCallback(async (dataUrl) => {
+    if (!dataUrl) {
+      richOriginalUrlRef.current = null
+      richStippleUrlRef.current = null
+      setRichUsingStipple(false)
+      setRichStippleError(null)
+      setRichStippleLoading(false)
+      loadRichPhoto(null)
+      return
+    }
+    richOriginalUrlRef.current = dataUrl
+    richStippleUrlRef.current = null
+    setRichUsingStipple(false)
+    setRichStippleError(null)
+    loadRichPhoto(dataUrl)
+
+    setRichStippleLoading(true)
+    try {
+      const base64 = await compressImageToBase64(dataUrl, 1024, 0.85)
+      const res = await fetch('/api/headshot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: base64 }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`)
+      if (!data.imageBase64) throw new Error('No image returned')
+      const stippleUrl = `data:image/png;base64,${data.imageBase64}`
+      richStippleUrlRef.current = stippleUrl
+      loadRichPhoto(stippleUrl)
+      setRichUsingStipple(true)
+    } catch (e) {
+      setRichStippleError(e.message)
+    } finally {
+      setRichStippleLoading(false)
+    }
+  }, [loadRichPhoto])
+
+  const handleRichUseOriginal = useCallback(() => {
+    loadRichPhoto(richOriginalUrlRef.current)
+    setRichUsingStipple(false)
+  }, [loadRichPhoto])
+
+  const handleRichUseStipple = useCallback(() => {
+    if (richStippleUrlRef.current) {
+      loadRichPhoto(richStippleUrlRef.current)
+      setRichUsingStipple(true)
+    }
+  }, [loadRichPhoto])
 
   const handleQuoteLogoChange = useCallback((dataUrl) => {
     if (!dataUrl) { quoteCompanyLogoRef.current = null; update('quoteCompanyLogo', null); return }
@@ -624,6 +679,22 @@ export default function Assets() {
                 <button className="btn-clear-photo" onClick={() => handleRichProfileImageChange(null)}>✕ Remove photo</button>
               )}
             </div>
+            {settings.richProfileImage && (
+              <div className="field">
+                {richStippleLoading && (
+                  <div style={{ fontSize: 11, color: 'var(--label)', marginBottom: 4 }}>⏳ Generating stipple effect…</div>
+                )}
+                {!richStippleLoading && richStippleUrlRef.current && (
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button className={`dim-btn${richUsingStipple ? ' active' : ''}`} style={{ flex: 1, fontSize: 11 }} onClick={handleRichUseStipple}>Stipple</button>
+                    <button className={`dim-btn${!richUsingStipple ? ' active' : ''}`} style={{ flex: 1, fontSize: 11 }} onClick={handleRichUseOriginal}>Original</button>
+                  </div>
+                )}
+                {richStippleError && (
+                  <div style={{ fontSize: 11, color: '#cc3333', marginTop: 4 }}>⚠ {richStippleError}</div>
+                )}
+              </div>
+            )}
             <div className="div" />
             <div className="sec">Company Logo</div>
             <div className="field">
