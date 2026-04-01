@@ -29,29 +29,23 @@ function loadImage(src) {
 }
 
 async function compositeWithLaurel(stippleDataUrl) {
-  const [laurel, stipple] = await Promise.all([
-    loadImage('/ChampionPhotoBackground.png'),
-    loadImage(stippleDataUrl),
-  ])
+  const stipple = await loadImage(stippleDataUrl)
 
   const c = document.createElement('canvas')
   c.width = SIZE; c.height = SIZE
   const ctx = c.getContext('2d')
 
-  // Draw stipple first
+  // White background
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(0, 0, SIZE, SIZE)
+
+  // Draw stipple portrait centered
   const scale = (SIZE * 0.95) / (stipple.naturalWidth || 1)
   const iw = stipple.naturalWidth  * scale
   const ih = stipple.naturalHeight * scale
   const px = (SIZE - iw) / 2
   const py = SIZE * 0.05
   ctx.drawImage(stipple, px, py, iw, ih)
-
-  // Draw laurel in foreground so leaves appear over the stipple
-  const bgAspect = laurel.naturalWidth / laurel.naturalHeight
-  let bw, bh
-  if (bgAspect > 1) { bh = SIZE; bw = SIZE * bgAspect }
-  else              { bw = SIZE; bh = SIZE / bgAspect }
-  ctx.drawImage(laurel, (SIZE - bw) / 2, (SIZE - bh) / 2, bw, bh)
 
   return c.toDataURL('image/png')
 }

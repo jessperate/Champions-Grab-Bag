@@ -173,6 +173,8 @@ export function drawRichQuoteCanvas(canvas, settings, fontsReady, profileImage, 
   const mono  = fontsReady ? "'Saans Mono', 'DM Mono', monospace"  : 'monospace'
 
   const M  = settings.brandModes?.quote?.[colorMode] ?? MODES[colorMode] ?? MODES.green
+  const isDark = colorMode === 'custom-dark'
+  const lockupColor = isDark ? '#ffffff' : M.text
 
   // ── Background
   ctx.fillStyle = M.bg
@@ -221,8 +223,8 @@ export function drawRichQuoteCanvas(canvas, settings, fontsReady, profileImage, 
     const logoH   = 72
     const logoW   = lockupImage ? Math.round(1179 * logoH / 291) : Math.round(784 * logoH / 252)
     const logoBmp = lockupImage
-      ? buildLockup(lockupImage, M.text, Math.round(logoW * dpr), Math.round(logoH * dpr))
-      : buildLogo(M.text, Math.round(logoH * dpr))
+      ? buildLockup(lockupImage, lockupColor, Math.round(logoW * dpr), Math.round(logoH * dpr))
+      : buildLogo(lockupColor, Math.round(logoH * dpr))
     const logoY   = ch - 40 - logoH
     ctx.fillStyle = M.bg
     ctx.fillRect(40, logoY, logoW, logoH)

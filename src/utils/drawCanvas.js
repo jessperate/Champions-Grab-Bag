@@ -112,7 +112,9 @@ export function drawCanvas(canvas, settings, fontsReady, lockupImage, companyLog
   const sans  = fontsReady ? "'Saans', sans-serif"                   : 'sans-serif';
   const mono  = fontsReady ? "'Saans Mono', 'DM Mono', monospace"    : 'monospace';
 
-  const M   = settings.brandModes?.quote?.[colorMode] ?? MODES[colorMode] ?? MODES.green;
+  const M   = settings.brandModes?.quote?.[colorMode] ?? MODES[colorMode] ?? MODES.green
+  const isDark = colorMode === 'custom-dark'
+  const lockupColor = isDark ? '#ffffff' : M.text;
   const pad = 40;
   const padY = isStory ? 240 : 40;
   const innerW = cw - pad * 2;
@@ -220,8 +222,8 @@ export function drawCanvas(canvas, settings, fontsReady, lockupImage, companyLog
   const logoH   = 72;
   const logoW   = lockupImage ? Math.round(1179 * logoH / 291) : Math.round(784 * logoH / 252);
   const logoBmp = lockupImage
-    ? buildLockup(lockupImage, M.text, Math.round(logoW * dpr), Math.round(logoH * dpr))
-    : buildLogo(M.text, Math.round(logoH * dpr));
+    ? buildLockup(lockupImage, lockupColor, Math.round(logoW * dpr), Math.round(logoH * dpr))
+    : buildLogo(lockupColor, Math.round(logoH * dpr));
   // Non-story: logo bottom aligns with guide x (40px from edge)
   // Story: keep existing vertical positioning
   const logoY = isStory
@@ -236,7 +238,12 @@ export function drawCanvas(canvas, settings, fontsReady, lockupImage, companyLog
     const cliA = (companyLogoImage.naturalWidth || 1) / (companyLogoImage.naturalHeight || 1)
     const cliH = logoH
     const cliW = Math.round(cliH * cliA)
-    ctx.drawImage(companyLogoImage, cw - pad - cliW, logoY, cliW, cliH)
+    if (isDark && settings.brandColor) {
+      const tintBmp = buildLockup(companyLogoImage, settings.brandColor, Math.round(cliW * dpr), Math.round(cliH * dpr))
+      ctx.drawImage(tintBmp, cw - pad - cliW, logoY, cliW, cliH)
+    } else {
+      ctx.drawImage(companyLogoImage, cw - pad - cliW, logoY, cliW, cliH)
+    }
   }
 
   if (showCTA) {

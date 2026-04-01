@@ -164,25 +164,18 @@ function drawHeader(ctx, cw, ch, M, s, fontsReady, wreathImage, airOpsLogoImage)
   ctx.letterSpacing = '0px'
 }
 
-// ── Photo card
-// Figma: x:479 y:560 w:481 h:488  border stroke:#005e1f
-function drawPhotoCard(ctx, M, s, profileImage, photoBgImage) {
+// ── Photo card — full canvas height
+function drawPhotoCard(ctx, M, s, profileImage, ch) {
   const px = Math.round(479 * s)
-  const py = Math.round(560 * s)
+  const py = 0
   const pw = Math.round(481 * s)
-  const ph = Math.round(488 * s)
+  const ph = ch
 
   // Card background
   ctx.fillStyle = M.bg
   ctx.fillRect(px, py, pw, ph)
 
-  // Dot pattern at 20% opacity
-  ctx.save()
-  ctx.globalAlpha = 0.2
-  drawDotPattern(ctx, px, py, pw, ph, M.dotColor, s)
-  ctx.restore()
-
-  // Stippled headshot — cover-fill the card, centered
+  // Headshot — cover-fill the card, centered
   if (profileImage) {
     const iA = (profileImage.naturalWidth || 1) / (profileImage.naturalHeight || 1)
     const cA = pw / ph
@@ -196,26 +189,6 @@ function drawPhotoCard(ctx, M, s, profileImage, photoBgImage) {
     ctx.drawImage(profileImage, px + (pw - iw) / 2, py + (ph - ih) / 2, iw, ih)
     ctx.restore()
   }
-
-  // Laurel wreath PNG foreground
-  if (photoBgImage) {
-    const ba = photoBgImage.naturalWidth / photoBgImage.naturalHeight
-    const ca = pw / ph
-    let bw, bh
-    if (ba > ca) { bh = ph; bw = ph * ba }
-    else         { bw = pw; bh = pw / ba }
-    ctx.save()
-    ctx.beginPath()
-    ctx.rect(px, py, pw, ph)
-    ctx.clip()
-    ctx.drawImage(photoBgImage, px + (pw - bw) / 2, py + (ph - bh) / 2, bw, bh)
-    ctx.restore()
-  }
-
-  // Card border (Figma: stroke #005e1f, 0.82px → use 1px at scale 1)
-  ctx.strokeStyle = M.photoBorder
-  ctx.lineWidth   = Math.max(1, Math.round(1 * s))
-  ctx.strokeRect(px + 0.5, py + 0.5, pw - 1, ph - 1)
 }
 
 // ── Text panel
@@ -335,14 +308,14 @@ export function drawAnnouncementCanvas(canvas, settings, fontsReady, profileImag
   ctx.fillStyle = M.bg
   ctx.fillRect(0, 0, cw, ch)
 
+  // Photo card drawn first so border/header/text layer on top
+  drawPhotoCard(ctx, M, s, profileImage, ch)
+
   // Decorative border (Figma: x:30 y:30 w:1856 h:1018 stroke:#008C44)
   drawBorder(ctx, cw, ch, M.border, s)
 
   // Header (uses wreathImage for the 'o' slot, airOpsLogoImage for the logo)
   drawHeader(ctx, cw, ch, M, s, fontsReady, wreathImage, airOpsLogoImage)
-
-  // Photo card (uses photoBgImage for the laurel overlay)
-  drawPhotoCard(ctx, M, s, profileImage, photoBgImage)
 
   // Text panel
   drawTextPanel(ctx, cw, M, s, fontsReady, settings, companyLogoImage)

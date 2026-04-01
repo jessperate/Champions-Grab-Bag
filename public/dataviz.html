@@ -507,9 +507,14 @@
   <!-- Color mode -->
   <div class="control-section" id="section-color-mode">
     <div class="control-label">Color Mode</div>
-    <div class="mode-grid">
+    <div class="mode-grid" id="mode-grid">
       <button class="mode-btn active" data-mode="light">Light</button>
       <button class="mode-btn" data-mode="dark">Dark</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-top:10px">
+      <input type="color" id="std-brand-picker" value="#008c44" title="Brand color" style="width:28px;height:28px;padding:2px;border:1px solid #d4e8da;cursor:pointer;flex-shrink:0;background:#f8fffb;">
+      <input type="text" id="std-brand-hex" placeholder="#hex brand color" maxlength="7" style="flex:1;min-width:0;font-size:12px;font-family:'Saans Mono','DM Mono',monospace;padding:6px 8px;border:1px solid #d4e8da;background:#f8fffb;color:#000d05;outline:none;">
+      <button id="std-brand-clear" style="display:none;background:none;border:1px solid #d4e8da;color:#676c79;cursor:pointer;padding:4px 8px;font-size:11px;font-family:'Saans Mono',monospace;flex-shrink:0;">✕</button>
     </div>
   </div>
 
@@ -760,6 +765,70 @@ function clearDvBrandColor() {
   }
 }
 
+// ── Standard chart brand color ────────────────────────────────────────────────
+let _stdBrandHex = '';
+function applyStdBrandColor(hex) {
+  _stdBrandHex = hex;
+  const result = generateBrandColorways(hex);
+  if (!result) return;
+  COLORS['brand-light'] = result.light;
+  COLORS['brand-dark']  = result.dark;
+  // Add/update swatch buttons in mode-grid
+  let btnLight = document.getElementById('std-brand-swatch-light');
+  let btnDark  = document.getElementById('std-brand-swatch-dark');
+  if (!btnLight) {
+    btnLight = document.createElement('button');
+    btnLight.id = 'std-brand-swatch-light';
+    btnLight.dataset.mode = 'brand-light';
+    btnLight.className = 'mode-btn';
+    btnLight.textContent = 'Brand Light';
+    document.getElementById('mode-grid').appendChild(btnLight);
+    btnLight.addEventListener('click', () => {
+      document.querySelectorAll('.mode-btn[data-mode]').forEach(b => b.classList.remove('active'));
+      btnLight.classList.add('active');
+      state.colorMode = 'brand-light';
+      render();
+    });
+  }
+  if (!btnDark) {
+    btnDark = document.createElement('button');
+    btnDark.id = 'std-brand-swatch-dark';
+    btnDark.dataset.mode = 'brand-dark';
+    btnDark.className = 'mode-btn';
+    btnDark.textContent = 'Brand Dark';
+    document.getElementById('mode-grid').appendChild(btnDark);
+    btnDark.addEventListener('click', () => {
+      document.querySelectorAll('.mode-btn[data-mode]').forEach(b => b.classList.remove('active'));
+      btnDark.classList.add('active');
+      state.colorMode = 'brand-dark';
+      render();
+    });
+  }
+  btnLight.style.borderLeft = `3px solid ${hex}`;
+  btnDark.style.borderLeft  = `3px solid ${hex}`;
+  document.getElementById('std-brand-clear').style.display = '';
+  document.getElementById('std-brand-hex').value = hex;
+  document.getElementById('std-brand-picker').value = hex;
+}
+function clearStdBrandColor() {
+  _stdBrandHex = '';
+  delete COLORS['brand-light'];
+  delete COLORS['brand-dark'];
+  const btnL = document.getElementById('std-brand-swatch-light');
+  const btnD = document.getElementById('std-brand-swatch-dark');
+  if (btnL) btnL.remove();
+  if (btnD) btnD.remove();
+  document.getElementById('std-brand-clear').style.display = 'none';
+  document.getElementById('std-brand-hex').value = '';
+  if (['brand-light', 'brand-dark'].includes(state.colorMode)) {
+    state.colorMode = 'light';
+    document.querySelectorAll('.mode-btn[data-mode]').forEach(b => {
+      b.classList.toggle('active', b.dataset.mode === 'light');
+    });
+    render();
+  }
+}
+
 // ── Paintings ─────────────────────────────────────────────────────────────────
 const PAINTINGS = [
   { key: 'bierstadt-sierra',   label: 'Sierra',      file: 'paintings/bierstadt-sierra.jpg',   overlay: 0.28 },
@@ -977,7 +1046,7 @@ function renderLine(data, C, W, H, cfg) {
 
   // Fill area under line
   const fillPts = [`${pl},${pt + chartH}`, ...pts.map(([x, y]) => `${x},${y}`), `${W - pr},${pt + chartH}`].join(' ');
-  const fillColor = cfg.colorMode === 'dark' ? 'rgba(0,230,118,0.08)' : 'rgba(204,255,224,0.5)';
+  const fillColor = (cfg.colorMode === 'dark' || cfg.colorMode === 'brand-dark') ? 'rgba(0,230,118,0.08)' : 'rgba(204,255,224,0.5)';
 
   let dots = '';
   pts.forEach(([x, y], i) => {
@@ -1209,10 +1278,10 @@ function renderSplitLayout({ W, H, title, subtitle, data, showLogo, showSource, 
   const splitX = Math.round(W * 0.40);
   const rightW = W - splitX;
 
-  // Left panel title colors
-  const titleColor = colorMode === 'light' ? '#000d05' : '#ffffff';
-  const subtitleColor = colorMode === 'light' ? '#676c79' : 'rgba(255,255,255,0.55)';
-  const logoFillColor = colorMode === 'light' ? '#001408' : '#ffffff';
+  // Left panel title colors — pulled from palette so brand modes work
+  const titleColor = C.title;
+  const subtitleColor = C.subtitle;
+  const logoFillColor = C.logoFill;
 
   // Left panel background
   const leftBg = `<rect x="0" y="0" width="${splitX}" height="${H}" fill="${C.bg}"/>`;
@@ -1356,7 +1425,8 @@ function render() {
 
   // Update topbar
   document.getElementById('preview-dims').textContent = `${state.exportW} × ${state.exportH}`;
-  document.getElementById('preview-info').textContent = `${CHART_NAMES[state.chartType]} · ${state.colorMode === 'light' ? 'Light' : 'Dark'}`;
+  const _modeLabel = state.colorMode === 'brand-light' ? 'Brand Light' : state.colorMode === 'brand-dark' ? 'Brand Dark' : state.colorMode === 'light' ? 'Light' : 'Dark';
+  document.getElementById('preview-info').textContent = `${CHART_NAMES[state.chartType]} · ${_modeLabel}`;
 
   // Encode full state into URL so slide-gen can parse it back
   try {
@@ -2000,7 +2070,7 @@ document.getElementById('highlight-select').addEventListener('change', render);
 document.getElementById('show-logo').addEventListener('change', render);
 document.getElementById('show-source').addEventListener('change', render);
 
-document.querySelectorAll('.mode-btn[data-mode]').forEach(btn => {
+document.querySelectorAll('#mode-grid .mode-btn[data-mode]').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.mode-btn[data-mode]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
@@ -2008,6 +2078,13 @@ document.querySelectorAll('.mode-btn[data-mode]').forEach(btn => {
     render();
   });
 });
+
+document.getElementById('std-brand-picker').addEventListener('input', e => applyStdBrandColor(e.target.value));
+document.getElementById('std-brand-hex').addEventListener('input', e => {
+  const v = e.target.value;
+  if (/^#[0-9a-fA-F]{6}$/.test(v)) applyStdBrandColor(v);
+});
+document.getElementById('std-brand-clear').addEventListener('click', clearStdBrandColor);
 
 document.querySelectorAll('.size-btn').forEach(btn => {
   btn.addEventListener('click', () => {

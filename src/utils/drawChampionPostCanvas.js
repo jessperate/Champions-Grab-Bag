@@ -143,13 +143,17 @@ function drawTextSide(ctx, x, y, w, h, settings, M, scale, fontsReady, companyLo
   ctx.letterSpacing = '0px'
 
   // 8. Bottom row: lockup (left) + company logo (right of lockup if present)
+  const isDark = settings.champColorMode === 'paper-dark' || settings.champColorMode === 'custom-dark'
+  const lockupColor = isDark ? '#ffffff' : M.text
+  const companyTint = isDark ? (settings.brandColor || M.quote) : null
+
   const bottomH = Math.round(56 * scale)
   const bottomY = y + h - pad - bottomH
   let afterLockupX = x + pad
 
   if (lockupImage) {
     const lkW = Math.round(1179 * bottomH / 291)
-    const lkBmp = buildLockup(lockupImage, M.text, Math.round(lkW * (dpr ?? 1)), Math.round(bottomH * (dpr ?? 1)))
+    const lkBmp = buildLockup(lockupImage, lockupColor, Math.round(lkW * (dpr ?? 1)), Math.round(bottomH * (dpr ?? 1)))
     ctx.drawImage(lkBmp, x + pad, bottomY, lkW, bottomH)
     afterLockupX = x + pad + lkW + Math.round(24 * scale)
   }
@@ -161,7 +165,14 @@ function drawTextSide(ctx, x, y, w, h, settings, M, scale, fontsReady, companyLo
     let lw = Math.min(maxLogoW, maxLogoH * logoAspect)
     let lh = lw / logoAspect
     if (lh > maxLogoH) { lh = maxLogoH; lw = lh * logoAspect }
-    ctx.drawImage(companyLogoImage, afterLockupX, bottomY + (bottomH - lh) / 2, lw, lh)
+    const logoX = afterLockupX
+    const logoY2 = bottomY + (bottomH - lh) / 2
+    if (companyTint) {
+      const tintBmp = buildLockup(companyLogoImage, companyTint, Math.round(lw * (dpr ?? 1)), Math.round(lh * (dpr ?? 1)))
+      ctx.drawImage(tintBmp, logoX, logoY2, lw, lh)
+    } else {
+      ctx.drawImage(companyLogoImage, logoX, logoY2, lw, lh)
+    }
   }
 
   ctx.restore()
