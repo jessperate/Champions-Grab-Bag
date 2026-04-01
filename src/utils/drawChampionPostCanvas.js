@@ -192,7 +192,7 @@ export function drawChampionPostCanvas(canvas, settings, fontsReady, profileImag
   const ctx = canvas.getContext('2d')
   if (dpr !== 1) ctx.scale(dpr, dpr)
 
-  const M = CHAMP_MODES[champColorMode] ?? CHAMP_MODES['paper-light']
+  const M = settings.brandModes?.champpost?.[champColorMode] ?? CHAMP_MODES[champColorMode] ?? CHAMP_MODES['paper-light']
 
   // Overall background
   ctx.fillStyle = M.bg

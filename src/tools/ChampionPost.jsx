@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import CanvasPreview from '../components/CanvasPreview'
 import { loadFonts } from '../utils/loadFonts'
 import { drawChampionPostCanvas } from '../utils/drawChampionPostCanvas'
+import { generateBrandModes } from '../utils/brandPalette'
 import '../components/Sidebar.css'
 import './ChampionPost.css'
 
@@ -29,8 +30,15 @@ const DEFAULT_SETTINGS = {
   championQuote:  '\u201CContent engineering changed the trajectory of my career.\u201D',
   champColorMode: 'paper-light',
   champFlip:      false,
+  brandColor:     '',
   dims:           { w: 1920, h: 1080 },
 }
+
+const CUSTOM_COLOR_MODES = [
+  { key: 'custom-light', label: 'Brand Light' },
+  { key: 'custom-dark',  label: 'Brand Dark'  },
+  { key: 'custom-mint',  label: 'Brand Mint'  },
+]
 
 const COLOR_MODES = [
   { key: 'paper-light', label: 'Paper Light' },
@@ -139,7 +147,8 @@ export default function ChampionPost() {
   }, [update])
 
   const draw = useCallback((canvas, s) => {
-    drawChampionPostCanvas(canvas, s, fontsReady, profileImageRef.current, photoBgImageRef.current, companyLogoRef.current)
+    const sm = s.brandColor ? { ...s, brandModes: generateBrandModes(s.brandColor) } : s
+    drawChampionPostCanvas(canvas, sm, fontsReady, profileImageRef.current, photoBgImageRef.current, companyLogoRef.current)
   }, [fontsReady])
 
   const exportJpeg = useCallback(() => {
@@ -310,6 +319,36 @@ export default function ChampionPost() {
 
           <div className="div" />
 
+          {/* Brand Color */}
+          <div className="sec">Brand Color</div>
+          <div className="brand-color-field">
+            <input
+              type="color"
+              className="brand-color-picker"
+              value={settings.brandColor || '#008c44'}
+              onChange={e => update('brandColor', e.target.value)}
+            />
+            <input
+              type="text"
+              className="brand-color-hex"
+              value={settings.brandColor}
+              placeholder="#hex"
+              onChange={e => {
+                const v = e.target.value
+                if (/^#[0-9a-fA-F]{6}$/.test(v) || v === '') update('brandColor', v)
+              }}
+            />
+            {settings.brandColor && (
+              <button className="brand-color-clear" onClick={() => {
+                const mode = settings.champColorMode
+                if (mode.startsWith('custom-')) update('champColorMode', 'paper-light')
+                update('brandColor', '')
+              }}>✕</button>
+            )}
+          </div>
+
+          <div className="div" />
+
           {/* Color Mode */}
           <div className="sec">Color Mode</div>
 
@@ -324,6 +363,21 @@ export default function ChampionPost() {
               </button>
             ))}
           </div>
+
+          {settings.brandColor && (
+            <div className="dim-grid" style={{ marginTop: 6 }}>
+              {CUSTOM_COLOR_MODES.map(m => (
+                <button
+                  key={m.key}
+                  className={`dim-btn brand-mode-btn${settings.champColorMode === m.key ? ' active' : ''}`}
+                  style={{ '--brand-color': settings.brandColor }}
+                  onClick={() => update('champColorMode', m.key)}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="div" />
 

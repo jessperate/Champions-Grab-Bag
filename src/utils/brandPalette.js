@@ -112,6 +112,22 @@ export function generateBrandModes(brandHex) {
       },
     },
 
+    // ── Champion Post ─────────────────────────────────────────────────────────
+    champpost: {
+      'custom-light': {
+        bg: lightBg, text: lightText, lastName: lightText,
+        quote: lightText, roleColor: lightText, moreColor: accent,
+      },
+      'custom-dark': {
+        bg: darkBg, text: darkText, lastName: darkText,
+        quote: darkText, roleColor: darkText, moreColor: accentBright,
+      },
+      'custom-mint': {
+        bg: mintBg, text: lightText, lastName: lightText,
+        quote: lightText, roleColor: lightText, moreColor: accent,
+      },
+    },
+
     // ── TitleCard-specific accent values ──────────────────────────────────────
     eyebrowAccent:   accent,        // eyebrow pill border/text in light mode
     emphasizeLight:  accent,        // sans title emphasis in light mode

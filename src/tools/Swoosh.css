@@ -88,6 +88,59 @@
   display: block;
 }
 
+/* ── Brand color */
+.swoosh-brand-section {
+  margin-bottom: 32px;
+}
+
+.swoosh-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.swoosh-brand-picker {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid #d4e8da;
+  cursor: pointer;
+  flex-shrink: 0;
+  background: none;
+}
+
+.swoosh-brand-hex {
+  flex: 1;
+  min-width: 0;
+  font-family: 'Saans Mono', monospace;
+  font-size: 13px;
+  border: 1px solid #d4e8da;
+  padding: 8px 10px;
+  color: #000d05;
+  background: #fff;
+}
+
+.swoosh-brand-hex:focus {
+  outline: none;
+  border-color: #008c44;
+}
+
+.swoosh-brand-clear {
+  background: none;
+  border: 1px solid #d4e8da;
+  color: #676c79;
+  cursor: pointer;
+  padding: 6px 10px;
+  font-size: 12px;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.swoosh-brand-clear:hover {
+  border-color: #008c44;
+  color: #000d05;
+}
+
 /* ── Variant grid */
 .swoosh-variants {
   display: grid;
