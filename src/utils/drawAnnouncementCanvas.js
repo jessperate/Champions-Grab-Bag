@@ -258,23 +258,14 @@ function drawTextPanel(ctx, cw, M, s, fontsReady, settings, companyLogoImage) {
     const logoClipW = Math.round(197  * s)
     const logoClipH = Math.round(86   * s)
 
-    const logoPad = Math.round(14 * s)
-    const maxLW   = logoClipW - logoPad * 2
-    const maxLH   = logoClipH - logoPad * 2
-    const logoA   = (companyLogoImage.naturalWidth || 1) / (companyLogoImage.naturalHeight || 1)
-    let lw = Math.min(maxLW, maxLH * logoA)
+    const logoA = (companyLogoImage.naturalWidth || 1) / (companyLogoImage.naturalHeight || 1)
+    let lw = Math.min(logoClipW, logoClipH * logoA)
     let lh = lw / logoA
-    if (lh > maxLH) { lh = maxLH; lw = lh * logoA }
+    if (lh > logoClipH) { lh = logoClipH; lw = lh * logoA }
 
-    // Bordered box
-    ctx.strokeStyle = M.logoBorder
-    ctx.lineWidth   = Math.round(2 * s)
-    ctx.strokeRect(logoClipX, logoClipY, logoClipW, logoClipH)
-
-    // Logo centered in box
     ctx.drawImage(
       companyLogoImage,
-      logoClipX + (logoClipW - lw) / 2,
+      logoClipX,
       logoClipY + (logoClipH - lh) / 2,
       lw, lh
     )
