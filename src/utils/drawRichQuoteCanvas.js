@@ -145,7 +145,7 @@ function strokeLine(ctx, x1, y1, x2, y2) {
 }
 
 // ── Main renderer
-export function drawRichQuoteCanvas(canvas, settings, fontsReady, profileImage, companyLogoImage) {
+export function drawRichQuoteCanvas(canvas, settings, fontsReady, profileImage, companyLogoImage, lockupImage) {
   const {
     richFirstName    = 'Alex',
     richLastName     = 'Rodmell',
@@ -219,12 +219,16 @@ export function drawRichQuoteCanvas(canvas, settings, fontsReady, profileImage, 
 
     // AirOps logo — story-only (matches Figma)
     const logoH   = 72
-    const logoW   = Math.round(784 * logoH / 252)
-    const logoBmp = buildLogo(M.text, Math.round(logoH * dpr))
+    const logoW   = lockupImage ? Math.round(1179 * logoH / 291) : Math.round(784 * logoH / 252)
+    const logoBmp = lockupImage ? null : buildLogo(M.text, Math.round(logoH * dpr))
     const logoY   = ch - 40 - logoH
     ctx.fillStyle = M.bg
     ctx.fillRect(40, logoY, logoW, logoH)
-    ctx.drawImage(logoBmp, 40, logoY, logoW, logoH)
+    if (lockupImage) {
+      ctx.drawImage(lockupImage, 40, logoY, logoW, logoH)
+    } else {
+      ctx.drawImage(logoBmp, 40, logoY, logoW, logoH)
+    }
 
     strokeLine(ctx, 0,      rowY,                   cw, rowY)
     strokeLine(ctx, splitX, rowY,                   splitX, rowY + headshotRowH)

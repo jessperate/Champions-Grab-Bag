@@ -11,7 +11,7 @@ const DARK_MODES = {
 
 const DARK_MODE_KEYS = new Set(Object.keys(DARK_MODES))
 
-export function drawTwitterCanvas(canvas, settings, fontsReady, profileImage, floralia) {
+export function drawTwitterCanvas(canvas, settings, fontsReady, profileImage, floralia, lockupImage) {
   const {
     colorMode,
     dims,
@@ -278,8 +278,8 @@ export function drawTwitterCanvas(canvas, settings, fontsReady, profileImage, fl
   // Non-story: logo bottom aligns with guide x (40px from edge), matching quote template
   // Story: 40px below the bottom edge of the white box
   // Build at dpr× so the bitmap is sharp in the scaled context; draw at CSS dimensions.
-  const logoW   = Math.round(784 * logoH / 252)
-  const logoBmp = buildLogo(logoColor, Math.round(logoH * dpr))
+  const logoW   = lockupImage ? Math.round(1179 * logoH / 291) : Math.round(784 * logoH / 252)
+  const logoBmp = lockupImage ? null : buildLogo(logoColor, Math.round(logoH * dpr))
   const footerY = isStory ? boxY + boxH + 40 : ch - guideX - logoH
   // Always clear background behind logo. When decoration is active (either style), snap the
   // fill rect to the dot grid so no dots are partially clipped at its edges.
@@ -294,7 +294,11 @@ export function drawTwitterCanvas(canvas, settings, fontsReady, profileImage, fl
   } else {
     ctx.fillRect(logoX, footerY, logoW, logoH)
   }
-  ctx.drawImage(logoBmp, logoX, footerY, logoW, logoH)
+  if (lockupImage) {
+    ctx.drawImage(lockupImage, logoX, footerY, logoW, logoH)
+  } else {
+    ctx.drawImage(logoBmp, logoX, footerY, logoW, logoH)
+  }
 
   // ── CTA pill (right-aligned to guide, bottom-aligned with logo)
   if (showCTA && ctaText) {

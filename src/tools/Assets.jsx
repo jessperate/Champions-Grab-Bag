@@ -140,6 +140,7 @@ export default function Assets() {
   const annPhotoBgRef        = useRef(null)
   const annWreathRef         = useRef(null)
   const annAirOpsLogoRef     = useRef(null)
+  const lockupImageRef       = useRef(null)
   const annCompanyLogoRef    = useRef(null)
   const annOriginalUrlRef    = useRef(null)
   const annStippleUrlRef     = useRef(null)
@@ -199,6 +200,12 @@ export default function Assets() {
     const logo = new Image()
     logo.onload = () => { annAirOpsLogoRef.current = logo; setSettings(prev => ({ ...prev })) }
     logo.src = '/AirOpsLogoGreen.svg'
+  }, [])
+
+  useEffect(() => {
+    const img = new Image()
+    img.onload = () => { lockupImageRef.current = img; setSettings(prev => ({ ...prev })) }
+    img.src = '/ao_champion_lockup.svg'
   }, [])
 
   const update = useCallback((key, value) => {
@@ -321,11 +328,11 @@ export default function Assets() {
   const draw = useCallback((canvas, s) => {
     const sm = s.brandColor ? { ...s, brandModes: generateBrandModes(s.brandColor) } : s
     if (sm.templateType === 'announcement')   drawAnnouncementCanvas(canvas, sm, fontsReady, annProfileImageRef.current, annPhotoBgRef.current, annCompanyLogoRef.current, annWreathRef.current, annAirOpsLogoRef.current)
-    else if (sm.templateType === 'twitter')   drawTwitterCanvas(canvas, sm, fontsReady, profileImageRef.current, floraliaDotsRef.current)
-    else if (sm.templateType === 'richquote') drawRichQuoteCanvas(canvas, sm, fontsReady, richProfileImageRef.current, richCompanyLogoRef.current)
+    else if (sm.templateType === 'twitter')   drawTwitterCanvas(canvas, sm, fontsReady, profileImageRef.current, floraliaDotsRef.current, lockupImageRef.current)
+    else if (sm.templateType === 'richquote') drawRichQuoteCanvas(canvas, sm, fontsReady, richProfileImageRef.current, richCompanyLogoRef.current, lockupImageRef.current)
     else if (sm.templateType === 'titlecard') drawTitleCardCanvas(canvas, sm, fontsReady, floraliaDotsRef.current)
     else if (sm.templateType === 'ijoined')   drawIJoinedCanvas(canvas, sm, fontsReady, ijProfileImageRef.current, floraliaDotsRef.current)
-    else                                      drawCanvas(canvas, sm, fontsReady)
+    else                                      drawCanvas(canvas, sm, fontsReady, lockupImageRef.current)
   }, [fontsReady, floraliaReady]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const exportJpeg = useCallback((w, h, filename) => {

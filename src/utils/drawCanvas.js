@@ -79,7 +79,7 @@ export function drawCtaPill(ctx, rightX, bottomY, text, ctaTextColor, sans) {
 
 // ── Main draw function — always renders at full canvas resolution.
 // Call with the preview <canvas> ref, or an offscreen canvas for export.
-export function drawCanvas(canvas, settings, fontsReady) {
+export function drawCanvas(canvas, settings, fontsReady, lockupImage) {
   const { firstName, lastName, roleCompany, ctaText, showCTA, colorMode, dims } = settings;
   const quote = smartQuotes(settings.quote ?? '');
   const { w: cw, h: ch } = dims;
@@ -205,8 +205,8 @@ export function drawCanvas(canvas, settings, fontsReady) {
 
   // ── Footer: logo (left) + CTA pill (right)
   const logoH   = 72;
-  const logoW   = Math.round(784 * logoH / 252);
-  const logoBmp = buildLogo(M.text, Math.round(logoH * dpr));
+  const logoW   = lockupImage ? Math.round(1179 * logoH / 291) : Math.round(784 * logoH / 252);
+  const logoBmp = lockupImage ? null : buildLogo(M.text, Math.round(logoH * dpr));
   // Non-story: logo bottom aligns with guide x (40px from edge)
   // Story: keep existing vertical positioning
   const logoY = isStory
@@ -214,7 +214,11 @@ export function drawCanvas(canvas, settings, fontsReady) {
     : ch - pad - logoH;
   ctx.fillStyle = M.bg;
   ctx.fillRect(pad + 2, logoY, logoW, logoH);
-  ctx.drawImage(logoBmp, pad + 2, logoY, logoW, logoH);
+  if (lockupImage) {
+    ctx.drawImage(lockupImage, pad + 2, logoY, logoW, logoH);
+  } else {
+    ctx.drawImage(logoBmp, pad + 2, logoY, logoW, logoH);
+  }
 
   if (showCTA) {
     drawCtaPill(ctx, cw - pad, ch - padY, ctaText, M.ctaText, sans);
