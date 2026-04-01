@@ -28,6 +28,26 @@ function loadImage(src) {
   })
 }
 
+// Strip neutral/gray pixels from the laurel PNG, leaving only the green leaves
+function extractGreenPixels(img) {
+  const oc = document.createElement('canvas')
+  oc.width = img.naturalWidth
+  oc.height = img.naturalHeight
+  const ctx = oc.getContext('2d')
+  ctx.drawImage(img, 0, 0)
+  const id = ctx.getImageData(0, 0, oc.width, oc.height)
+  const d = id.data
+  for (let i = 0; i < d.length; i += 4) {
+    if (d[i + 3] < 10) continue
+    const r = d[i], g = d[i + 1], b = d[i + 2]
+    // Gray/neutral pixels have similar R, G, B — make them transparent
+    const colorfulness = Math.abs(r - g) + Math.abs(g - b) + Math.abs(r - b)
+    if (colorfulness < 40) d[i + 3] = 0
+  }
+  ctx.putImageData(id, 0, 0)
+  return oc
+}
+
 async function compositeWithLaurel(stippleDataUrl) {
   const [laurel, stipple] = await Promise.all([
     loadImage('/ChampionPhotoBackground.png'),
@@ -38,7 +58,7 @@ async function compositeWithLaurel(stippleDataUrl) {
   c.width = SIZE; c.height = SIZE
   const ctx = c.getContext('2d')
 
-  // White base required for multiply compositing to work correctly
+  // White background
   ctx.fillStyle = '#ffffff'
   ctx.fillRect(0, 0, SIZE, SIZE)
 
@@ -50,15 +70,13 @@ async function compositeWithLaurel(stippleDataUrl) {
   const py = SIZE * 0.05
   ctx.drawImage(stipple, px, py, iw, ih)
 
-  // Overlay laurel with multiply: white areas of the PNG become transparent,
-  // so the stipple face shows through while the green leaves sit on top
-  ctx.globalCompositeOperation = 'multiply'
+  // Draw only the green laurel leaves (dots stripped out)
+  const laurelOnly = extractGreenPixels(laurel)
   const bgAspect = laurel.naturalWidth / laurel.naturalHeight
   let bw, bh
   if (bgAspect > 1) { bh = SIZE; bw = SIZE * bgAspect }
   else              { bw = SIZE; bh = SIZE / bgAspect }
-  ctx.drawImage(laurel, (SIZE - bw) / 2, (SIZE - bh) / 2, bw, bh)
-  ctx.globalCompositeOperation = 'source-over'
+  ctx.drawImage(laurelOnly, (SIZE - bw) / 2, (SIZE - bh) / 2, bw, bh)
 
   return c.toDataURL('image/png')
 }
