@@ -92,7 +92,7 @@ export function drawCtaPill(ctx, rightX, bottomY, text, ctaTextColor, sans) {
 
 // ── Main draw function — always renders at full canvas resolution.
 // Call with the preview <canvas> ref, or an offscreen canvas for export.
-export function drawCanvas(canvas, settings, fontsReady, lockupImage) {
+export function drawCanvas(canvas, settings, fontsReady, lockupImage, companyLogoImage) {
   const { firstName, lastName, roleCompany, ctaText, showCTA, colorMode, dims } = settings;
   const quote = smartQuotes(settings.quote ?? '');
   const { w: cw, h: ch } = dims;
@@ -230,6 +230,14 @@ export function drawCanvas(canvas, settings, fontsReady, lockupImage) {
   ctx.fillStyle = M.bg;
   ctx.fillRect(pad + 2, logoY, logoW, logoH);
   ctx.drawImage(logoBmp, pad + 2, logoY, logoW, logoH);
+
+  // ── Company logo — bottom right, aligned with lockup, no background
+  if (companyLogoImage) {
+    const cliA = (companyLogoImage.naturalWidth || 1) / (companyLogoImage.naturalHeight || 1)
+    const cliH = logoH
+    const cliW = Math.round(cliH * cliA)
+    ctx.drawImage(companyLogoImage, cw - pad - cliW, logoY, cliW, cliH)
+  }
 
   if (showCTA) {
     drawCtaPill(ctx, cw - pad, ch - padY, ctaText, M.ctaText, sans);

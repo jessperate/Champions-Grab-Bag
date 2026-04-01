@@ -82,6 +82,7 @@ const DEFAULT_SETTINGS = {
   ctaText:          'See AirOps in Action',
   colorMode:        'green',
   showCTA:          false,
+  quoteCompanyLogo: null,
   dims:             { w: 1920, h: 1080 },
   tweetText:        "Giving AI to sales and marketing teams is easy. Giving AI to the operating layer of revenue is hard, that's why AirOps will quietly create more enterprise value than most flashy AI tools.",
   tweetAuthorName:  'Sushil Krishna',
@@ -141,6 +142,8 @@ export default function Assets() {
   const annWreathRef         = useRef(null)
   const annAirOpsLogoRef     = useRef(null)
   const lockupImageRef       = useRef(null)
+  const quoteCompanyLogoRef  = useRef(null)
+  const quoteLogoInputRef    = useRef(null)
   const annCompanyLogoRef    = useRef(null)
   const annOriginalUrlRef    = useRef(null)
   const annStippleUrlRef     = useRef(null)
@@ -242,6 +245,13 @@ export default function Assets() {
     img.src = dataUrl
   }, [update])
 
+  const handleQuoteLogoChange = useCallback((dataUrl) => {
+    if (!dataUrl) { quoteCompanyLogoRef.current = null; update('quoteCompanyLogo', null); return }
+    const img = new Image()
+    img.onload = () => { quoteCompanyLogoRef.current = img; update('quoteCompanyLogo', dataUrl) }
+    img.src = dataUrl
+  }, [update])
+
   const handleRichCompanyLogoChange = useCallback((dataUrl) => {
     if (!dataUrl) { richCompanyLogoRef.current = null; update('richCompanyLogo', null); return }
     const img = new Image()
@@ -332,7 +342,7 @@ export default function Assets() {
     else if (sm.templateType === 'richquote') drawRichQuoteCanvas(canvas, sm, fontsReady, richProfileImageRef.current, richCompanyLogoRef.current, lockupImageRef.current)
     else if (sm.templateType === 'titlecard') drawTitleCardCanvas(canvas, sm, fontsReady, floraliaDotsRef.current)
     else if (sm.templateType === 'ijoined')   drawIJoinedCanvas(canvas, sm, fontsReady, ijProfileImageRef.current, floraliaDotsRef.current)
-    else                                      drawCanvas(canvas, sm, fontsReady, lockupImageRef.current)
+    else                                      drawCanvas(canvas, sm, fontsReady, lockupImageRef.current, quoteCompanyLogoRef.current)
   }, [fontsReady, floraliaReady]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const exportJpeg = useCallback((w, h, filename) => {
@@ -548,6 +558,30 @@ export default function Assets() {
                 <input type="checkbox" checked={settings.showCTA} onChange={e => update('showCTA', e.target.checked)} />
                 <div className="ttrack" /><div className="tthumb" />
               </label>
+            </div>
+            <div className="field">
+              <label>Company Logo</label>
+              <input
+                ref={quoteLogoInputRef}
+                type="file"
+                accept="image/svg+xml,image/png,image/*"
+                style={{ display: 'none' }}
+                onChange={e => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  const url = URL.createObjectURL(file)
+                  handleQuoteLogoChange(url)
+                  e.target.value = ''
+                }}
+              />
+              <button className="btn-upload" onClick={() => quoteLogoInputRef.current?.click()}>
+                {settings.quoteCompanyLogo ? '↺ Replace Logo' : '↑ Upload Logo'}
+              </button>
+              {settings.quoteCompanyLogo && (
+                <button className="btn-upload" style={{ marginTop: 4 }} onClick={() => handleQuoteLogoChange(null)}>
+                  ✕ Remove
+                </button>
+              )}
             </div>
             <div className="div" />
           </>}
