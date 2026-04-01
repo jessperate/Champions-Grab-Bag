@@ -73,6 +73,27 @@ function compressImageToBase64(dataUrl, maxPx, quality) {
   })
 }
 
+// Strip near-white background from a stipple dataUrl (Gemini returns white bg)
+function removeWhiteFromDataUrl(dataUrl) {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      const c = document.createElement('canvas')
+      c.width = img.naturalWidth; c.height = img.naturalHeight
+      const ctx = c.getContext('2d')
+      ctx.drawImage(img, 0, 0)
+      const id = ctx.getImageData(0, 0, c.width, c.height)
+      const d = id.data
+      for (let i = 0; i < d.length; i += 4) {
+        if (d[i] > 230 && d[i + 1] > 230 && d[i + 2] > 230) d[i + 3] = 0
+      }
+      ctx.putImageData(id, 0, 0)
+      resolve(c.toDataURL('image/png'))
+    }
+    img.src = dataUrl
+  })
+}
+
 const DEFAULT_SETTINGS = {
   templateType:     'quote',
   quote:            '\u201CThe most successful marketing teams in the AI era will be those who build content for how the internet actually works.\u201D',
@@ -278,8 +299,9 @@ export default function Assets() {
       if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`)
       if (!data.imageBase64) throw new Error('No image returned')
       const stippleUrl = `data:image/png;base64,${data.imageBase64}`
-      richStippleUrlRef.current = stippleUrl
-      loadRichPhoto(stippleUrl)
+      const stippleNoBg = await removeWhiteFromDataUrl(stippleUrl)
+      richStippleUrlRef.current = stippleNoBg
+      loadRichPhoto(stippleNoBg)
       setRichUsingStipple(true)
     } catch (e) {
       setRichStippleError(e.message)
@@ -361,8 +383,9 @@ export default function Assets() {
       if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`)
       if (!data.imageBase64) throw new Error('No image returned')
       const stippleUrl = `data:image/png;base64,${data.imageBase64}`
-      annStippleUrlRef.current = stippleUrl
-      loadAnnPhoto(stippleUrl)
+      const stippleNoBg = await removeWhiteFromDataUrl(stippleUrl)
+      annStippleUrlRef.current = stippleNoBg
+      loadAnnPhoto(stippleNoBg)
       setAnnUsingStipple(true)
     } catch (e) {
       setAnnStippleError(e.message)

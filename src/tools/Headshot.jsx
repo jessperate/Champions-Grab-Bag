@@ -28,7 +28,27 @@ function loadImage(src) {
   })
 }
 
-// Strip neutral/gray pixels from the laurel PNG, leaving only the green leaves
+// Keep only neutral/gray dot pixels from the background PNG (colorfulness < 40)
+function extractDotPixels(img) {
+  const oc = document.createElement('canvas')
+  oc.width = img.naturalWidth
+  oc.height = img.naturalHeight
+  const ctx = oc.getContext('2d')
+  ctx.drawImage(img, 0, 0)
+  const id = ctx.getImageData(0, 0, oc.width, oc.height)
+  const d = id.data
+  for (let i = 0; i < d.length; i += 4) {
+    if (d[i + 3] < 10) continue
+    const r = d[i], g = d[i + 1], b = d[i + 2]
+    const colorfulness = Math.abs(r - g) + Math.abs(g - b) + Math.abs(r - b)
+    // Keep only neutral/gray dots; make colorful (green) pixels transparent
+    if (colorfulness >= 40) d[i + 3] = 0
+  }
+  ctx.putImageData(id, 0, 0)
+  return oc
+}
+
+// Keep only green leaf pixels from the background PNG (colorfulness >= 40)
 function extractGreenPixels(img) {
   const oc = document.createElement('canvas')
   oc.width = img.naturalWidth
@@ -40,9 +60,26 @@ function extractGreenPixels(img) {
   for (let i = 0; i < d.length; i += 4) {
     if (d[i + 3] < 10) continue
     const r = d[i], g = d[i + 1], b = d[i + 2]
-    // Gray/neutral pixels have similar R, G, B — make them transparent
     const colorfulness = Math.abs(r - g) + Math.abs(g - b) + Math.abs(r - b)
     if (colorfulness < 40) d[i + 3] = 0
+  }
+  ctx.putImageData(id, 0, 0)
+  return oc
+}
+
+// Remove near-white background from stipple portrait (Gemini returns white bg)
+function removeWhiteBackground(img) {
+  const oc = document.createElement('canvas')
+  oc.width = img.naturalWidth
+  oc.height = img.naturalHeight
+  const ctx = oc.getContext('2d')
+  ctx.drawImage(img, 0, 0)
+  const id = ctx.getImageData(0, 0, oc.width, oc.height)
+  const d = id.data
+  for (let i = 0; i < d.length; i += 4) {
+    const r = d[i], g = d[i + 1], b = d[i + 2]
+    // Very light pixels → transparent (threshold tuned for Gemini's white bg)
+    if (r > 230 && g > 230 && b > 230) d[i + 3] = 0
   }
   ctx.putImageData(id, 0, 0)
   return oc
@@ -58,24 +95,29 @@ async function compositeWithLaurel(stippleDataUrl) {
   c.width = SIZE; c.height = SIZE
   const ctx = c.getContext('2d')
 
-  // White background
-  ctx.fillStyle = '#ffffff'
+  // Layer 1: Cream background
+  ctx.fillStyle = '#f8fffb'
   ctx.fillRect(0, 0, SIZE, SIZE)
 
-  // Draw stipple portrait centered
+  // Layer 2: Halftone dot pattern (neutral/gray pixels from background PNG)
+  const dotsOnly = extractDotPixels(laurel)
+  const bgAspect = laurel.naturalWidth / laurel.naturalHeight
+  let bw, bh
+  if (bgAspect > 1) { bh = SIZE; bw = SIZE * bgAspect }
+  else              { bw = SIZE; bh = SIZE / bgAspect }
+  ctx.drawImage(dotsOnly, (SIZE - bw) / 2, (SIZE - bh) / 2, bw, bh)
+
+  // Layer 3: Stipple portrait with white background removed
+  const stippleNoBg = removeWhiteBackground(stipple)
   const scale = (SIZE * 0.95) / (stipple.naturalWidth || 1)
   const iw = stipple.naturalWidth  * scale
   const ih = stipple.naturalHeight * scale
   const px = (SIZE - iw) / 2
   const py = SIZE * 0.05
-  ctx.drawImage(stipple, px, py, iw, ih)
+  ctx.drawImage(stippleNoBg, px, py, iw, ih)
 
-  // Draw only the green laurel leaves (dots stripped out)
+  // Layer 4: Green laurel leaves in the foreground
   const laurelOnly = extractGreenPixels(laurel)
-  const bgAspect = laurel.naturalWidth / laurel.naturalHeight
-  let bw, bh
-  if (bgAspect > 1) { bh = SIZE; bw = SIZE * bgAspect }
-  else              { bw = SIZE; bh = SIZE / bgAspect }
   ctx.drawImage(laurelOnly, (SIZE - bw) / 2, (SIZE - bh) / 2, bw, bh)
 
   return c.toDataURL('image/png')
