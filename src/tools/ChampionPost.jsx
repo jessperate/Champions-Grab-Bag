@@ -372,7 +372,20 @@ export default function ChampionPost() {
                   if (settings.champColorMode.startsWith('custom-')) update('champColorMode', 'paper-light')
                 }
               }}
-              onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  const v = e.target.value
+                  setBrandColorDraft(null)
+                  if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+                    update('brandColor', v)
+                    if (!settings.champColorMode.startsWith('custom-')) update('champColorMode', 'custom-light')
+                  } else if (v === '') {
+                    update('brandColor', '')
+                    if (settings.champColorMode.startsWith('custom-')) update('champColorMode', 'paper-light')
+                  }
+                  e.target.blur()
+                }
+              }}
             />
             {settings.brandColor && (
               <button className="brand-color-clear" onClick={() => {

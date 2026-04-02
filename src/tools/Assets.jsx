@@ -980,7 +980,15 @@ export default function Assets() {
                 if (/^#[0-9a-fA-F]{6}$/.test(v)) update('brandColor', v)
                 else if (v === '') update('brandColor', '')
               }}
-              onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  const v = e.target.value
+                  setBrandColorDraft(null)
+                  if (/^#[0-9a-fA-F]{6}$/.test(v)) update('brandColor', v)
+                  else if (v === '') update('brandColor', '')
+                  e.target.blur()
+                }
+              }}
             />
             {settings.brandColor && (
               <button className="btn-clear-photo" onClick={() => { setBrandColorDraft(null); update('brandColor', '') }}>✕</button>
