@@ -1,4 +1,4 @@
-import { MODES, buildLogo, wrapText, smartQuotes } from './drawCanvas.js'
+import { MODES, buildLogo, buildLockup, wrapText, smartQuotes } from './drawCanvas.js'
 import { STIPPLE_COLORS } from './drawFleurons.js'
 
 // Per-mode accent for eyebrow pill border + text (var(--color-3) equivalent)
@@ -31,7 +31,7 @@ const DARK_MODES = {
 }
 
 // ── Main renderer
-export function drawTitleCardCanvas(canvas, settings, fontsReady, floralia) {
+export function drawTitleCardCanvas(canvas, settings, fontsReady, floralia, lockupImage) {
   const {
     colorMode, dims,
     tcEyebrow         = 'Offer ends today',
@@ -380,5 +380,19 @@ export function drawTitleCardCanvas(canvas, settings, fontsReady, floralia) {
     ctx.fillText(tcCTAText, cw / 2, ctaTopY + ctaH / 2)
     ctx.textAlign    = 'left'
     ctx.textBaseline = 'top'
+  }
+
+  // ── AirOps Champion lockup — bottom center, above the bottom guide
+  if (lockupImage) {
+    const lkH = isStory ? 80 : 56
+    // Lockup SVG natural dimensions: 1179 × 291
+    const lkW = Math.round(1179 * lkH / 291)
+    const lkColor = isDark ? (TM.logoColor ?? '#ffffff') : M.text
+    const lkBmp = buildLockup(lockupImage, lkColor, Math.round(lkW * dpr), Math.round(lkH * dpr))
+    const lkX = Math.round((cw - lkW) / 2)
+    const lkY = ch - (isStory ? ctaPadB - lkH - 24 : guideX + lkH)
+    ctx.fillStyle = bg
+    ctx.fillRect(lkX, lkY, lkW, lkH)
+    ctx.drawImage(lkBmp, lkX, lkY, lkW, lkH)
   }
 }

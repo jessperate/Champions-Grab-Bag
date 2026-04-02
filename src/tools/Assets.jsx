@@ -418,7 +418,7 @@ export default function Assets() {
     if (sm.templateType === 'announcement')   drawAnnouncementCanvas(canvas, sm, fontsReady, annProfileImageRef.current, annPhotoBgRef.current, annCompanyLogoRef.current, annWreathRef.current, annAirOpsLogoRef.current)
     else if (sm.templateType === 'twitter')   drawTwitterCanvas(canvas, sm, fontsReady, profileImageRef.current, floraliaDotsRef.current, lockupImageRef.current)
     else if (sm.templateType === 'richquote') drawRichQuoteCanvas(canvas, sm, fontsReady, richProfileImageRef.current, richCompanyLogoRef.current, lockupImageRef.current)
-    else if (sm.templateType === 'titlecard') drawTitleCardCanvas(canvas, sm, fontsReady, floraliaDotsRef.current)
+    else if (sm.templateType === 'titlecard') drawTitleCardCanvas(canvas, sm, fontsReady, floraliaDotsRef.current, lockupImageRef.current)
     else if (sm.templateType === 'ijoined')   drawIJoinedCanvas(canvas, sm, fontsReady, ijProfileImageRef.current, floraliaDotsRef.current)
     else                                      drawCanvas(canvas, sm, fontsReady, lockupImageRef.current, quoteCompanyLogoRef.current)
   }, [fontsReady, floraliaReady]) // eslint-disable-line react-hooks/exhaustive-deps
