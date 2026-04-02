@@ -24,8 +24,8 @@ function compressImageToBase64(dataUrl, maxPx, quality) {
 }
 
 const DEFAULT_SETTINGS = {
-  firstName:      'Lucy',
-  lastName:       'Hoyle',
+  firstName:      'Jordan',
+  lastName:       'Miller',
   roleCompany:    'Senior Content Engineer, Carta',
   championQuote:  '\u201CContent engineering changed the trajectory of my career.\u201D',
   champColorMode: 'paper-light',
@@ -54,6 +54,7 @@ const DIMS = [
 export default function ChampionPost() {
   const [settings, setSettings]         = useState({ ...DEFAULT_SETTINGS })
   const [fontsReady, setFontsReady]     = useState(false)
+  const [brandColorDraft, setBrandColorDraft] = useState('')
   const [stippleLoading, setStippleLoading] = useState(false)
   const [stippleError, setStippleError] = useState(null)
   const [usingStipple, setUsingStipple] = useState(false)
@@ -333,22 +334,39 @@ export default function ChampionPost() {
               type="color"
               className="brand-color-picker"
               value={settings.brandColor || '#008c44'}
-              onChange={e => update('brandColor', e.target.value)}
+              onChange={e => {
+                const v = e.target.value
+                setBrandColorDraft(v)
+                update('brandColor', v)
+                if (!settings.champColorMode.startsWith('custom-')) update('champColorMode', 'custom-light')
+              }}
             />
             <input
               type="text"
               className="brand-color-hex"
-              value={settings.brandColor}
+              value={brandColorDraft !== '' ? brandColorDraft : settings.brandColor}
               placeholder="#hex"
               onChange={e => {
                 const v = e.target.value
-                if (/^#[0-9a-fA-F]{6}$/.test(v) || v === '') update('brandColor', v)
+                setBrandColorDraft(v)
+                if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+                  update('brandColor', v)
+                  if (!settings.champColorMode.startsWith('custom-')) update('champColorMode', 'custom-light')
+                } else if (v === '') {
+                  update('brandColor', '')
+                  if (settings.champColorMode.startsWith('custom-')) update('champColorMode', 'paper-light')
+                }
+              }}
+              onBlur={() => {
+                if (!/^#[0-9a-fA-F]{6}$/.test(brandColorDraft) && brandColorDraft !== '') {
+                  setBrandColorDraft(settings.brandColor)
+                }
               }}
             />
             {settings.brandColor && (
               <button className="brand-color-clear" onClick={() => {
-                const mode = settings.champColorMode
-                if (mode.startsWith('custom-')) update('champColorMode', 'paper-light')
+                setBrandColorDraft('')
+                if (settings.champColorMode.startsWith('custom-')) update('champColorMode', 'paper-light')
                 update('brandColor', '')
               }}>✕</button>
             )}

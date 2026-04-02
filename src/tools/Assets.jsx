@@ -167,6 +167,7 @@ export default function Assets() {
   const [richStippleLoading, setRichStippleLoading] = useState(false)
   const [richStippleError, setRichStippleError]     = useState(null)
   const [richUsingStipple, setRichUsingStipple]     = useState(false)
+  const [brandColorDraft, setBrandColorDraft]       = useState('')
 
   const fileInputRef      = useRef(null)
   const richPhotoInputRef = useRef(null)
@@ -288,7 +289,9 @@ export default function Assets() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageBase64: base64 }),
       })
-      const data = await res.json()
+      const text = await res.text()
+      let data
+      try { data = JSON.parse(text) } catch { throw new Error(`Server error (${res.status})`) }
       if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`)
       if (!data.imageBase64) throw new Error('No image returned')
       const stippleUrl = `data:image/png;base64,${data.imageBase64}`
@@ -365,7 +368,9 @@ export default function Assets() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageBase64: base64 }),
       })
-      const data = await res.json()
+      const text = await res.text()
+      let data
+      try { data = JSON.parse(text) } catch { throw new Error(`Server error (${res.status})`) }
       if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`)
       if (!data.imageBase64) throw new Error('No image returned')
       const stippleUrl = `data:image/png;base64,${data.imageBase64}`
@@ -959,21 +964,27 @@ export default function Assets() {
               type="color"
               className="brand-color-picker"
               value={settings.brandColor || '#008c44'}
-              onChange={e => update('brandColor', e.target.value)}
+              onChange={e => { setBrandColorDraft(e.target.value); update('brandColor', e.target.value) }}
             />
             <input
               type="text"
               className="brand-color-hex"
               placeholder="#rrggbb"
-              value={settings.brandColor}
+              value={brandColorDraft !== '' ? brandColorDraft : settings.brandColor}
               maxLength={7}
               onChange={e => {
                 const v = e.target.value
-                update('brandColor', v)
+                setBrandColorDraft(v)
+                if (/^#[0-9a-fA-F]{6}$/.test(v) || v === '') update('brandColor', v)
+              }}
+              onBlur={() => {
+                if (!/^#[0-9a-fA-F]{6}$/.test(brandColorDraft) && brandColorDraft !== '') {
+                  setBrandColorDraft(settings.brandColor)
+                }
               }}
             />
             {settings.brandColor && (
-              <button className="btn-clear-photo" onClick={() => update('brandColor', '')}>✕</button>
+              <button className="btn-clear-photo" onClick={() => { setBrandColorDraft(''); update('brandColor', '') }}>✕</button>
             )}
           </div>
           <div className="div" />

@@ -233,16 +233,17 @@ export function drawCanvas(canvas, settings, fontsReady, lockupImage, companyLog
   ctx.fillRect(pad + 2, logoY, logoW, logoH);
   ctx.drawImage(logoBmp, pad + 2, logoY, logoW, logoH);
 
-  // ── Company logo — bottom right, aligned with lockup, no background
+  // ── Company logo — bottom right; shift up above CTA pill if both are present
   if (companyLogoImage) {
     const cliA = (companyLogoImage.naturalWidth || 1) / (companyLogoImage.naturalHeight || 1)
     const cliH = logoH
     const cliW = Math.round(cliH * cliA)
+    const cliY = showCTA ? logoY - 104 - 16 : logoY
     if (isDark && settings.brandColor) {
       const tintBmp = buildLockup(companyLogoImage, settings.brandColor, Math.round(cliW * dpr), Math.round(cliH * dpr))
-      ctx.drawImage(tintBmp, cw - pad - cliW, logoY, cliW, cliH)
+      ctx.drawImage(tintBmp, cw - pad - cliW, cliY, cliW, cliH)
     } else {
-      ctx.drawImage(companyLogoImage, cw - pad - cliW, logoY, cliW, cliH)
+      ctx.drawImage(companyLogoImage, cw - pad - cliW, cliY, cliW, cliH)
     }
   }
 

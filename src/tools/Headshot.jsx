@@ -103,7 +103,9 @@ export default function Headshot() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ imageBase64: base64 }),
         })
-        const data = await res.json()
+        const text = await res.text()
+        let data
+        try { data = JSON.parse(text) } catch { throw new Error(`Server error (${res.status})`) }
         if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`)
         if (!data.imageBase64) throw new Error('No image returned from API')
         const stippleUrl = `data:image/png;base64,${data.imageBase64}`
