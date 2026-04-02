@@ -47,7 +47,7 @@ const ANN_COLOR_MODES = [
 const ANN_BRAND_MODES = [
   { key: 'custom-light', label: 'Brand Light' },
   { key: 'custom-dark',  label: 'Brand Dark'  },
-  { key: 'custom-mint',  label: 'Brand Mint'  },
+  { key: 'custom-mint',  label: 'Brand Mid'   },
 ]
 
 function compressImageToBase64(dataUrl, maxPx, quality) {
@@ -1035,7 +1035,39 @@ export default function Assets() {
         </div>
       </div>
 
-      <CanvasPreview settings={settings} fontsReady={fontsReady} draw={draw} />
+      <CanvasPreview
+        settings={settings}
+        fontsReady={fontsReady}
+        draw={draw}
+        overlayFields={(() => {
+          const { w: cw, h: ch } = settings.dims
+          const s  = cw / 1920
+          if (settings.templateType === 'announcement') {
+            const pw     = Math.round(cw * 0.527)
+            const tx     = Math.round(1013 * s) + Math.round(40 * s)
+            const maxW   = cw - tx - Math.round(60 * s)
+            const nameSz = Math.round(134 * s)
+            const roleSz = Math.round(32 * s)
+            const labelSz = Math.round(34 * s)
+            let ty = Math.round(56 * s)
+            const firstY = ty; ty += Math.round(nameSz * 1.05)
+            const lastY  = ty; ty += Math.round(nameSz * 1.2)
+            const roleY  = ty; ty += Math.round(roleSz * 1.5)
+            ty += Math.round(roleSz * 0.9)
+            ty = Math.max(ty, Math.round(ch * 0.52))
+            ty += Math.round(labelSz * 1.8)
+            const quoteY = ty
+            return [
+              { key: 'ann-photo', x: 0, y: 0, w: pw, h: ch, isPhoto: true, onPhotoClick: () => annPhotoInputRef.current?.click() },
+              { key: 'annFirstName', x: tx, y: firstY, w: maxW, h: Math.round(nameSz * 1.1),  value: settings.annFirstName, onChange: v => update('annFirstName', v) },
+              { key: 'annLastName',  x: tx, y: lastY,  w: maxW, h: Math.round(nameSz * 1.2),  value: settings.annLastName,  onChange: v => update('annLastName', v) },
+              { key: 'annRole',      x: tx, y: roleY,  w: maxW, h: Math.round(roleSz * 2.5),  value: settings.annRole,      onChange: v => update('annRole', v) },
+              { key: 'annQuote',     x: tx, y: quoteY, w: maxW, h: ch - quoteY - Math.round(50 * s), value: settings.annQuote, onChange: v => update('annQuote', v), multiline: true },
+            ]
+          }
+          return null
+        })()}
+      />
     </div>
   )
 }

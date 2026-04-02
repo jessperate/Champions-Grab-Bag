@@ -52,6 +52,28 @@ function drawPhotoPanel(ctx, M, cw, ch, profileImage) {
   ctx.fillStyle = M.bg
   ctx.fillRect(0, 0, pw, ch)
 
+  if (!profileImage) {
+    // Upload placeholder
+    const s = cw / 1920
+    ctx.save()
+    ctx.setLineDash([Math.round(8 * s), Math.round(8 * s)])
+    ctx.strokeStyle = M.border
+    ctx.globalAlpha = 0.35
+    ctx.lineWidth   = Math.round(2 * s)
+    const inset = Math.round(pw * 0.1)
+    ctx.strokeRect(inset, Math.round(ch * 0.1), pw - inset * 2, Math.round(ch * 0.8))
+    ctx.setLineDash([])
+    const sz = Math.round(28 * s)
+    ctx.font         = `400 ${sz}px sans-serif`
+    ctx.fillStyle    = M.border
+    ctx.globalAlpha  = 0.45
+    ctx.textAlign    = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText('↑  Upload photo', pw / 2, ch / 2)
+    ctx.restore()
+    return
+  }
+
   if (profileImage) {
     const iA = (profileImage.naturalWidth || 1) / (profileImage.naturalHeight || 1)
     const cA = pw / ch

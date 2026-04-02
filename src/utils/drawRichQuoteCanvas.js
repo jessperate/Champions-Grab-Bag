@@ -6,7 +6,25 @@ function drawPhotoSection(ctx, profileImage, x, y, w, h, M, isStipple) {
   ctx.fillStyle = M.ctaText
   ctx.fillRect(x, y, w, h)
 
-  if (!profileImage) return
+  if (!profileImage) {
+    // Upload placeholder
+    ctx.save()
+    ctx.setLineDash([6, 6])
+    ctx.strokeStyle = '#ffffff'
+    ctx.globalAlpha = 0.3
+    ctx.lineWidth   = 2
+    const inset = Math.round(w * 0.1)
+    ctx.strokeRect(x + inset, y + Math.round(h * 0.1), w - inset * 2, Math.round(h * 0.8))
+    ctx.setLineDash([])
+    ctx.font         = `400 ${Math.round(w * 0.06)}px sans-serif`
+    ctx.fillStyle    = '#ffffff'
+    ctx.globalAlpha  = 0.45
+    ctx.textAlign    = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText('↑  Upload photo', x + w / 2, y + h / 2)
+    ctx.restore()
+    return
+  }
 
   const overscan = 4
   const s  = Math.max((w + overscan * 2) / (profileImage.naturalWidth  || 1),

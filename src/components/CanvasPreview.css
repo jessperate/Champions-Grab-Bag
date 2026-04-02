@@ -89,3 +89,67 @@
 .canvas-scaler canvas {
   display: block;
 }
+
+/* ── Canvas overlay fields */
+.cof {
+  position: absolute;
+  cursor: pointer;
+  border: 2px dashed transparent;
+  border-radius: 2px;
+  transition: border-color .15s, background .15s;
+  box-sizing: border-box;
+}
+.cof:hover {
+  border-color: rgba(0, 140, 68, 0.55);
+  background: rgba(0, 140, 68, 0.06);
+}
+.cof.cof-active {
+  border-color: rgba(0, 140, 68, 0.8);
+  background: rgba(255, 255, 255, 0.88);
+  cursor: default;
+  z-index: 10;
+}
+.cof.cof-photo {
+  border-radius: 0;
+}
+.cof.cof-photo .cof-upload-hint {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+  color: rgba(255,255,255,0.9);
+  pointer-events: none;
+}
+.cof.cof-photo:hover {
+  background: rgba(0, 0, 0, 0.28);
+  border-color: transparent;
+}
+.cof.cof-photo:hover .cof-upload-hint {
+  display: flex;
+}
+.cof-upload-icon {
+  font-size: 2em;
+  line-height: 1;
+}
+.cof-upload-label {
+  font-family: 'Saans', sans-serif;
+  font-size: 0.85em;
+  letter-spacing: 0.04em;
+}
+.cof-input {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  font-family: 'Saans', sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+  padding: 8px 10px;
+  color: #111;
+  box-sizing: border-box;
+}

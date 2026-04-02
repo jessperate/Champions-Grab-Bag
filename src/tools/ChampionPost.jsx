@@ -37,7 +37,7 @@ const DEFAULT_SETTINGS = {
 const CUSTOM_COLOR_MODES = [
   { key: 'custom-light', label: 'Brand Light' },
   { key: 'custom-dark',  label: 'Brand Dark'  },
-  { key: 'custom-mint',  label: 'Brand Mint'  },
+  { key: 'custom-mint',  label: 'Brand Mid'   },
 ]
 
 const COLOR_MODES = [
@@ -459,6 +459,31 @@ export default function ChampionPost() {
         settings={{ ...settings, templateType: 'champion-post', colorMode: settings.champColorMode, ijMode: 'paper' }}
         fontsReady={fontsReady}
         draw={draw}
+        overlayFields={(() => {
+          const { w: cw, h: ch } = settings.dims
+          const s  = cw / 1920
+          const pw     = Math.round(cw * 0.527)
+          const tx     = Math.round(1013 * s) + Math.round(40 * s)
+          const maxW   = cw - tx - Math.round(60 * s)
+          const nameSz = Math.round(134 * s)
+          const roleSz = Math.round(32 * s)
+          const labelSz = Math.round(34 * s)
+          let ty = Math.round(56 * s)
+          const firstY = ty; ty += Math.round(nameSz * 1.05)
+          const lastY  = ty; ty += Math.round(nameSz * 1.2)
+          const roleY  = ty; ty += Math.round(roleSz * 1.5)
+          ty += Math.round(roleSz * 0.9)
+          ty = Math.max(ty, Math.round(ch * 0.52))
+          ty += Math.round(labelSz * 1.8)
+          const quoteY = ty
+          return [
+            { key: 'photo', x: 0, y: 0, w: pw, h: ch, isPhoto: true, onPhotoClick: () => photoInputRef.current?.click() },
+            { key: 'firstName',    x: tx, y: firstY, w: maxW, h: Math.round(nameSz * 1.1),  value: settings.firstName,    onChange: v => update('firstName', v) },
+            { key: 'lastName',     x: tx, y: lastY,  w: maxW, h: Math.round(nameSz * 1.2),  value: settings.lastName,     onChange: v => update('lastName', v) },
+            { key: 'roleCompany',  x: tx, y: roleY,  w: maxW, h: Math.round(roleSz * 2.5),  value: settings.roleCompany,  onChange: v => update('roleCompany', v) },
+            { key: 'championQuote', x: tx, y: quoteY, w: maxW, h: ch - quoteY - Math.round(50 * s), value: settings.championQuote, onChange: v => update('championQuote', v), multiline: true },
+          ]
+        })()}
       />
     </div>
   )

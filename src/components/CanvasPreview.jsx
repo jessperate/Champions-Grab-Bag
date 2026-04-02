@@ -10,12 +10,12 @@ const MODE_LABELS = {
 }
 const TEMPLATE_LABELS = { quote: 'Quote Block', richquote: 'Rich Quote', titlecard: 'Title Card', twitter: 'Twitter Post', certificate: 'Certificate', ijoined: 'I Joined', 'champion-post': 'Champion Post' }
 
-export default function CanvasPreview({ settings, fontsReady, draw }) {
+export default function CanvasPreview({ settings, fontsReady, draw, overlayFields }) {
   const canvasRef    = useRef(null)
   const containerRef = useRef(null)
-  const [scale, setScale] = useState(1)
+  const [scale, setScale]       = useState(1)
+  const [activeField, setActiveField] = useState(null)
 
-  // Recompute display scale whenever container size or canvas dims change
   const updateScale = useCallback(() => {
     if (!containerRef.current) return
     const { width, height } = containerRef.current.getBoundingClientRect()
@@ -31,10 +31,6 @@ export default function CanvasPreview({ settings, fontsReady, draw }) {
     return () => window.removeEventListener('resize', updateScale)
   }, [updateScale])
 
-  // Redraw at 2× buffer so physical pixels are 1:1 on retina screens.
-  // dpr is passed via settings so draw functions scale the buffer and apply
-  // ctx.scale() — all layout coords stay in 1× px, only the buffer grows.
-  // Pin CSS size to original dims to keep layout correct.
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -44,6 +40,13 @@ export default function CanvasPreview({ settings, fontsReady, draw }) {
     canvas.style.width  = `${w}px`
     canvas.style.height = `${h}px`
   }, [settings, draw])
+
+  // Dismiss active field when pressing Escape
+  useEffect(() => {
+    const onKey = e => { if (e.key === 'Escape') setActiveField(null) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   const { w, h } = settings.dims
 
@@ -73,11 +76,62 @@ export default function CanvasPreview({ settings, fontsReady, draw }) {
         <div
           className="canvas-scaler"
           style={{ width: w * scale, height: h * scale }}
+          onClick={() => setActiveField(null)}
         >
           <canvas
             ref={canvasRef}
             style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}
           />
+
+          {overlayFields && overlayFields.map(f => {
+            const isActive = activeField === f.key
+            return (
+              <div
+                key={f.key}
+                className={`cof${f.isPhoto ? ' cof-photo' : ''}${isActive ? ' cof-active' : ''}`}
+                style={{
+                  left:   Math.round(f.x * scale),
+                  top:    Math.round(f.y * scale),
+                  width:  Math.round(f.w * scale),
+                  height: Math.round(f.h * scale),
+                }}
+                onClick={e => {
+                  e.stopPropagation()
+                  if (f.isPhoto) { f.onPhotoClick?.(); return }
+                  setActiveField(f.key)
+                }}
+              >
+                {f.isPhoto && (
+                  <div className="cof-upload-hint">
+                    <span className="cof-upload-icon">↑</span>
+                    <span className="cof-upload-label">Upload photo</span>
+                  </div>
+                )}
+                {isActive && !f.isPhoto && (
+                  f.multiline ? (
+                    <textarea
+                      className="cof-input"
+                      value={f.value}
+                      onChange={e => { e.stopPropagation(); f.onChange(e.target.value) }}
+                      onBlur={() => setActiveField(null)}
+                      onClick={e => e.stopPropagation()}
+                      autoFocus
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      className="cof-input"
+                      value={f.value}
+                      onChange={e => { e.stopPropagation(); f.onChange(e.target.value) }}
+                      onBlur={() => setActiveField(null)}
+                      onClick={e => e.stopPropagation()}
+                      autoFocus
+                    />
+                  )
+                )}
+              </div>
+            )
+          })}
         </div>
       </div>
     </div>
