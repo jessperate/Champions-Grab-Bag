@@ -244,6 +244,15 @@ export function drawAnnouncementCanvas(canvas, settings, fontsReady, profileImag
   // Champion lockup (bottom-left of photo panel)
   drawLockup(ctx, cw, ch, M, s, dpr, lockupImage)
 
+  // Vertical divider between photo and text panels
+  const divX = Math.round(cw * 0.527)
+  ctx.strokeStyle = M.border
+  ctx.lineWidth   = Math.round(2 * s)
+  ctx.beginPath()
+  ctx.moveTo(divX, 0)
+  ctx.lineTo(divX, ch)
+  ctx.stroke()
+
   // Border
   drawBorder(ctx, cw, ch, M.border, s)
 
