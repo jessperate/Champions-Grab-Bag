@@ -1,7 +1,8 @@
 import { MODES, buildLogo, buildLockup, wrapText, smartQuotes } from './drawCanvas.js'
 
-// ── Draw photo region: darkest brand color per colorway (M.ctaText) + hard-light blend
-function drawPhotoSection(ctx, profileImage, x, y, w, h, M) {
+// ── Draw photo region: darkest brand color per colorway (M.ctaText) + blend
+// Stipple images (black-on-white) use multiply so white bg disappears into panel bg
+function drawPhotoSection(ctx, profileImage, x, y, w, h, M, isStipple) {
   ctx.fillStyle = M.ctaText
   ctx.fillRect(x, y, w, h)
 
@@ -19,7 +20,7 @@ function drawPhotoSection(ctx, profileImage, x, y, w, h, M) {
   ctx.beginPath()
   ctx.rect(x, y, w, h)
   ctx.clip()
-  ctx.globalCompositeOperation = 'hard-light'
+  ctx.globalCompositeOperation = isStipple ? 'multiply' : 'hard-light'
   ctx.drawImage(profileImage, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih)
   ctx.globalCompositeOperation = 'source-over'
   ctx.restore()
@@ -151,6 +152,7 @@ export function drawRichQuoteCanvas(canvas, settings, fontsReady, profileImage, 
     richLastName     = 'Rodmell',
     richRoleCompany  = 'Growth, Venn',
     richFlip         = false,
+    richIsStipple    = false,
     colorMode, dims,
   } = settings
   const richQuoteText = smartQuotes(settings.richQuoteText ?? '"Enter a quote here."')
@@ -189,6 +191,17 @@ export function drawRichQuoteCanvas(canvas, settings, fontsReady, profileImage, 
     M, serif, sans, mono,
   }
 
+  // ── Shared lockup helper
+  function drawLockup(lkX, lkY) {
+    if (!lockupImage) return
+    const lkH   = Math.round(ch * 0.065)
+    const lkW   = Math.round(1179 * lkH / 291)
+    const lkBmp = buildLockup(lockupImage, lockupColor, Math.round(lkW * dpr), Math.round(lkH * dpr))
+    ctx.fillStyle = M.bg
+    ctx.fillRect(lkX, lkY, lkW, lkH)
+    ctx.drawImage(lkBmp, lkX, lkY, lkW, lkH)
+  }
+
   if (isLand) {
     // ── Landscape: content | photo+logo  (flip swaps left/right)
     const splitX     = Math.round(cw / 2)
@@ -196,11 +209,15 @@ export function drawRichQuoteCanvas(canvas, settings, fontsReady, profileImage, 
     const photoH     = ch - logoPanelH
     const mediaX     = richFlip ? 0      : splitX
     const contentX   = richFlip ? splitX : 0
+    const pad        = 53
 
-    drawPhotoSection(ctx, profileImage,    mediaX, 0,      splitX, photoH,     M)
+    drawPhotoSection(ctx, profileImage,    mediaX, 0,      splitX, photoH,     M, richIsStipple)
     drawLogoSection(ctx, companyLogoImage, mediaX, photoH, splitX, logoPanelH, M)
-    drawContent(ctx, { x: contentX, y: 0, w: splitX, h: ch, pad: 53,
+    drawContent(ctx, { x: contentX, y: 0, w: splitX, h: ch, pad,
       ...contentArgs, nameSz: 120, quoteSzBase: 64, quoteLH: 1.2 })
+
+    const lkH = Math.round(ch * 0.065)
+    drawLockup(contentX + pad, ch - pad - lkH)
 
     strokeLine(ctx, splitX,           0,      splitX,           ch)
     strokeLine(ctx, mediaX === 0 ? 0 : splitX, photoH, mediaX === 0 ? splitX : cw, photoH)
@@ -213,22 +230,15 @@ export function drawRichQuoteCanvas(canvas, settings, fontsReady, profileImage, 
     const splitX       = Math.round(cw / 2)
     const rowY         = richFlip ? topPad                 : topPad + contentH
     const contentY     = richFlip ? topPad + headshotRowH  : topPad
+    const pad          = 40
 
-    drawPhotoSection(ctx, profileImage,    0,      rowY, splitX, headshotRowH, M)
+    drawPhotoSection(ctx, profileImage,    0,      rowY, splitX, headshotRowH, M, richIsStipple)
     drawLogoSection(ctx, companyLogoImage, splitX, rowY, splitX, headshotRowH, M)
-    drawContent(ctx, { x: 0, y: contentY, w: cw, h: contentH, pad: 40,
+    drawContent(ctx, { x: 0, y: contentY, w: cw, h: contentH, pad,
       ...contentArgs, nameSz: 96, quoteSzBase: 56, quoteLH: 1.14 })
 
-    // AirOps logo — story-only (matches Figma)
-    const logoH   = 72
-    const logoW   = lockupImage ? Math.round(1179 * logoH / 291) : Math.round(784 * logoH / 252)
-    const logoBmp = lockupImage
-      ? buildLockup(lockupImage, lockupColor, Math.round(logoW * dpr), Math.round(logoH * dpr))
-      : buildLogo(lockupColor, Math.round(logoH * dpr))
-    const logoY   = ch - 40 - logoH
-    ctx.fillStyle = M.bg
-    ctx.fillRect(40, logoY, logoW, logoH)
-    ctx.drawImage(logoBmp, 40, logoY, logoW, logoH)
+    const lkH = Math.round(ch * 0.065)
+    drawLockup(pad, ch - pad - lkH)
 
     strokeLine(ctx, 0,      rowY,                   cw, rowY)
     strokeLine(ctx, splitX, rowY,                   splitX, rowY + headshotRowH)
@@ -241,11 +251,15 @@ export function drawRichQuoteCanvas(canvas, settings, fontsReady, profileImage, 
     const splitX       = Math.round(cw / 2)
     const rowY         = richFlip ? 0          : contentH
     const contentY     = richFlip ? headshotRowH : 0
+    const pad          = 40
 
-    drawPhotoSection(ctx, profileImage,    0,      rowY, splitX, headshotRowH, M)
+    drawPhotoSection(ctx, profileImage,    0,      rowY, splitX, headshotRowH, M, richIsStipple)
     drawLogoSection(ctx, companyLogoImage, splitX, rowY, splitX, headshotRowH, M)
-    drawContent(ctx, { x: 0, y: contentY, w: cw, h: contentH, pad: 40,
+    drawContent(ctx, { x: 0, y: contentY, w: cw, h: contentH, pad,
       ...contentArgs, nameSz: 96, quoteSzBase: 56, quoteLH: 1.14 })
+
+    const lkH = Math.round(ch * 0.065)
+    drawLockup(pad, contentY + contentH - pad - lkH)
 
     // Only draw the horizontal that separates content from headshot row — not the canvas-edge line
     const divY = richFlip ? rowY + headshotRowH : rowY
@@ -259,11 +273,15 @@ export function drawRichQuoteCanvas(canvas, settings, fontsReady, profileImage, 
     const photoH     = ch - logoPanelH
     const mediaX     = richFlip ? 0      : splitX
     const contentX   = richFlip ? splitX : 0
+    const pad        = 40
 
-    drawPhotoSection(ctx, profileImage,    mediaX, 0,      splitX, photoH,     M)
+    drawPhotoSection(ctx, profileImage,    mediaX, 0,      splitX, photoH,     M, richIsStipple)
     drawLogoSection(ctx, companyLogoImage, mediaX, photoH, splitX, logoPanelH, M)
-    drawContent(ctx, { x: contentX, y: 0, w: splitX, h: ch, pad: 40,
+    drawContent(ctx, { x: contentX, y: 0, w: splitX, h: ch, pad,
       ...contentArgs, nameSz: 96, quoteSzBase: 56, quoteLH: 1.14 })
+
+    const lkH = Math.round(ch * 0.065)
+    drawLockup(contentX + pad, ch - pad - lkH)
 
     strokeLine(ctx, splitX,                          0,      splitX,                          ch)
     strokeLine(ctx, mediaX === 0 ? 0 : splitX, photoH, mediaX === 0 ? splitX : cw, photoH)
