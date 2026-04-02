@@ -131,6 +131,7 @@ const DEFAULT_SETTINGS = {
   annFirstName:      'Lucy',
   annLastName:       'Hoyle',
   annRole:           'Senior Content Engineer',
+  annQuote:          '\u201CI\u2019m a Champion because getting other people excited about the possibilities in this space has been my biggest win.\u201D',
   annColorMode:      'paper-light',
   annProfileImage:   null,
   brandColor:        '',
@@ -146,6 +147,7 @@ export default function Assets() {
   const richProfileImageRef  = useRef(null)
   const richCompanyLogoRef   = useRef(null)
   const annProfileImageRef   = useRef(null)
+  const annLaurelRef         = useRef(null)
   const annPhotoBgRef        = useRef(null)
   const annWreathRef         = useRef(null)
   const annAirOpsLogoRef     = useRef(null)
@@ -199,9 +201,15 @@ export default function Assets() {
   }, [])
 
   useEffect(() => {
-    const bg = new Image()
-    bg.onload = () => { annPhotoBgRef.current = bg; setSettings(prev => ({ ...prev })) }
-    bg.src = '/ChampionPhotoBackground.png'
+    fetch('/HeadshotLaurelsOnly.svg')
+      .then(r => r.text())
+      .then(text => {
+        const blob = new Blob([text], { type: 'image/svg+xml' })
+        const url  = URL.createObjectURL(blob)
+        const img  = new Image()
+        img.onload = () => { annLaurelRef.current = img; URL.revokeObjectURL(url); setSettings(prev => ({ ...prev })) }
+        img.src = url
+      })
   }, [])
 
   useEffect(() => {
@@ -393,7 +401,7 @@ export default function Assets() {
 
   const draw = useCallback((canvas, s) => {
     const sm = s.brandColor ? { ...s, brandModes: generateBrandModes(s.brandColor) } : s
-    if (sm.templateType === 'announcement')   drawAnnouncementCanvas(canvas, sm, fontsReady, annProfileImageRef.current, annPhotoBgRef.current, annCompanyLogoRef.current, annWreathRef.current, annAirOpsLogoRef.current)
+    if (sm.templateType === 'announcement')   drawAnnouncementCanvas(canvas, sm, fontsReady, annProfileImageRef.current, annLaurelRef.current, annCompanyLogoRef.current, lockupImageRef.current)
     else if (sm.templateType === 'twitter')   drawTwitterCanvas(canvas, sm, fontsReady, profileImageRef.current, floraliaDotsRef.current, lockupImageRef.current)
     else if (sm.templateType === 'richquote') drawRichQuoteCanvas(canvas, sm, fontsReady, richProfileImageRef.current, richCompanyLogoRef.current, lockupImageRef.current)
     else if (sm.templateType === 'titlecard') drawTitleCardCanvas(canvas, sm, fontsReady, floraliaDotsRef.current, lockupImageRef.current)
@@ -475,8 +483,12 @@ export default function Assets() {
               <input type="text" value={settings.annLastName} onChange={e => update('annLastName', e.target.value)} />
             </div>
             <div className="field">
-              <label>Title</label>
+              <label>Title &amp; Company</label>
               <input type="text" value={settings.annRole} onChange={e => update('annRole', e.target.value)} />
+            </div>
+            <div className="field">
+              <label>Champion Quote</label>
+              <textarea rows={4} value={settings.annQuote} onChange={e => update('annQuote', e.target.value)} style={{ resize: 'vertical' }} />
             </div>
             <div className="div" />
             <div className="sec">Photo</div>
