@@ -28,97 +28,36 @@ function loadImage(src) {
   })
 }
 
-// Keep only neutral/gray dot pixels from the background PNG (colorfulness < 40)
-function extractDotPixels(img) {
-  const oc = document.createElement('canvas')
-  oc.width = img.naturalWidth
-  oc.height = img.naturalHeight
-  const ctx = oc.getContext('2d')
-  ctx.drawImage(img, 0, 0)
-  const id = ctx.getImageData(0, 0, oc.width, oc.height)
-  const d = id.data
-  for (let i = 0; i < d.length; i += 4) {
-    if (d[i + 3] < 10) continue
-    const r = d[i], g = d[i + 1], b = d[i + 2]
-    const colorfulness = Math.abs(r - g) + Math.abs(g - b) + Math.abs(r - b)
-    // Keep only neutral/gray dots; make colorful (green) pixels transparent
-    if (colorfulness >= 40) d[i + 3] = 0
-  }
-  ctx.putImageData(id, 0, 0)
-  return oc
-}
-
-// Keep only green leaf pixels from the background PNG (colorfulness >= 40)
-function extractGreenPixels(img) {
-  const oc = document.createElement('canvas')
-  oc.width = img.naturalWidth
-  oc.height = img.naturalHeight
-  const ctx = oc.getContext('2d')
-  ctx.drawImage(img, 0, 0)
-  const id = ctx.getImageData(0, 0, oc.width, oc.height)
-  const d = id.data
-  for (let i = 0; i < d.length; i += 4) {
-    if (d[i + 3] < 10) continue
-    const r = d[i], g = d[i + 1], b = d[i + 2]
-    const colorfulness = Math.abs(r - g) + Math.abs(g - b) + Math.abs(r - b)
-    if (colorfulness < 40) d[i + 3] = 0
-  }
-  ctx.putImageData(id, 0, 0)
-  return oc
-}
-
-// Remove near-white background from stipple portrait (Gemini returns white bg)
-function removeWhiteBackground(img) {
-  const oc = document.createElement('canvas')
-  oc.width = img.naturalWidth
-  oc.height = img.naturalHeight
-  const ctx = oc.getContext('2d')
-  ctx.drawImage(img, 0, 0)
-  const id = ctx.getImageData(0, 0, oc.width, oc.height)
-  const d = id.data
-  for (let i = 0; i < d.length; i += 4) {
-    const r = d[i], g = d[i + 1], b = d[i + 2]
-    // Very light pixels → transparent (threshold tuned for Gemini's white bg)
-    if (r > 230 && g > 230 && b > 230) d[i + 3] = 0
-  }
-  ctx.putImageData(id, 0, 0)
-  return oc
-}
-
-async function compositeWithLaurel(stippleDataUrl) {
-  const [laurel, stipple] = await Promise.all([
-    loadImage('/ChampionPhotoBackground.png'),
+async function compositeWithFrame(stippleDataUrl) {
+  const [frame, stipple] = await Promise.all([
+    loadImage('/HeadshotFrame.svg'),
     loadImage(stippleDataUrl),
   ])
+
+  // Frame SVG natural dimensions: 824 × 836
+  const FRAME_W = frame.naturalWidth  || 824
+  const FRAME_H = frame.naturalHeight || 836
 
   const c = document.createElement('canvas')
   c.width = SIZE; c.height = SIZE
   const ctx = c.getContext('2d')
 
-  // Layer 1: Cream background
-  ctx.fillStyle = '#f8fffb'
+  // Layer 1: Cream background matching the SVG frame color
+  ctx.fillStyle = '#f8fffa'
   ctx.fillRect(0, 0, SIZE, SIZE)
 
-  // Layer 2: Halftone dot pattern (neutral/gray pixels from background PNG)
-  const dotsOnly = extractDotPixels(laurel)
-  const bgAspect = laurel.naturalWidth / laurel.naturalHeight
-  let bw, bh
-  if (bgAspect > 1) { bh = SIZE; bw = SIZE * bgAspect }
-  else              { bw = SIZE; bh = SIZE / bgAspect }
-  ctx.drawImage(dotsOnly, (SIZE - bw) / 2, (SIZE - bh) / 2, bw, bh)
+  // Layer 2: Stipple portrait — cover-fill the canvas, centered
+  const sScale = SIZE / Math.min(stipple.naturalWidth || SIZE, stipple.naturalHeight || SIZE)
+  const iw = (stipple.naturalWidth  || SIZE) * sScale
+  const ih = (stipple.naturalHeight || SIZE) * sScale
+  ctx.drawImage(stipple, (SIZE - iw) / 2, (SIZE - ih) / 2, iw, ih)
 
-  // Layer 3: Stipple portrait — drawn with its white bg intact so it
-  // cleanly covers the dots underneath (no bleed-through on skin tones)
-  const scale = (SIZE * 0.95) / (stipple.naturalWidth || 1)
-  const iw = stipple.naturalWidth  * scale
-  const ih = stipple.naturalHeight * scale
-  const px = (SIZE - iw) / 2
-  const py = SIZE * 0.05
-  ctx.drawImage(stipple, px, py, iw, ih)
-
-  // Layer 4: Green laurel leaves in the foreground
-  const laurelOnly = extractGreenPixels(laurel)
-  ctx.drawImage(laurelOnly, (SIZE - bw) / 2, (SIZE - bh) / 2, bw, bh)
+  // Layer 3: Frame SVG overlay (laurels + border + bottom text area, no bg fill)
+  // Scale to fill canvas width, center vertically
+  const fScale = SIZE / FRAME_W
+  const fw = SIZE
+  const fh = Math.round(FRAME_H * fScale)
+  ctx.drawImage(frame, 0, (SIZE - fh) / 2, fw, fh)
 
   return c.toDataURL('image/png')
 }
@@ -155,7 +94,7 @@ export default function Headshot() {
         if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`)
         if (!data.imageBase64) throw new Error('No image returned from API')
         const stippleUrl = `data:image/png;base64,${data.imageBase64}`
-        const composite = await compositeWithLaurel(stippleUrl)
+        const composite = await compositeWithFrame(stippleUrl)
         setCompositeImage(composite)
       } catch (e) {
         setError(e.message)
@@ -182,7 +121,7 @@ export default function Headshot() {
       if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`)
       if (!data.imageBase64) throw new Error('No image returned from API')
       const stippleUrl = `data:image/png;base64,${data.imageBase64}`
-      const composite = await compositeWithLaurel(stippleUrl)
+      const composite = await compositeWithFrame(stippleUrl)
       setCompositeImage(composite)
     } catch (e) {
       setError(e.message)
