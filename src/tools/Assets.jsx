@@ -5,11 +5,9 @@ import { drawCanvas } from '../utils/drawCanvas'
 import { drawTwitterCanvas } from '../utils/drawTwitterCanvas'
 import { drawRichQuoteCanvas } from '../utils/drawRichQuoteCanvas'
 import { drawTitleCardCanvas } from '../utils/drawTitleCardCanvas'
-import { drawIJoinedCanvas } from '../utils/drawIJoinedCanvas'
 import { drawAnnouncementCanvas } from '../utils/drawAnnouncementCanvas'
 import { generateFleuronFontDots } from '../utils/drawFleurons'
 import { generateBrandModes } from '../utils/brandPalette'
-import { IJ_MODE_LABELS } from '../utils/drawIJoinedCanvas'
 import '../components/Sidebar.css'
 
 // ── Template picker
@@ -19,7 +17,6 @@ const TEMPLATES = [
   { value: 'richquote',    label: 'Rich Quote',   icon: '/Icon-RichQuote.jpg'    },
   { value: 'titlecard',    label: 'Title Card',   icon: '/Icon-TitleCard.jpg'    },
   { value: 'twitter',      label: 'Twitter Post', icon: '/Icon-Twitter.jpg'      },
-  { value: 'ijoined',      label: 'I Joined',     icon: '/Icon-IJoined.jpg'      },
 ]
 
 const MODE_LABELS = {
@@ -51,10 +48,6 @@ const ANN_BRAND_MODES = [
   { key: 'custom-light', label: 'Brand Light' },
   { key: 'custom-dark',  label: 'Brand Dark'  },
   { key: 'custom-mint',  label: 'Brand Mint'  },
-]
-const IJ_BRAND_MODES  = [
-  { key: 'custom-light', label: 'Brand Light' },
-  { key: 'custom-dark',  label: 'Brand Dark'  },
 ]
 
 function compressImageToBase64(dataUrl, maxPx, quality) {
@@ -134,11 +127,6 @@ const DEFAULT_SETTINGS = {
   tcShowCTA:         false,
   decorationStyle:    'fill',
   decorationRotation: 0,
-  ijMode:            'night',
-  ijName:            'Nicole Baer',
-  ijRole:            'Marketing Strategist',
-  ijShowHiring:      true,
-  ijProfileImage:    null,
   // Announcement
   annFirstName:      'Lucy',
   annLastName:       'Hoyle',
@@ -157,7 +145,6 @@ export default function Assets() {
   const profileImageRef      = useRef(null)
   const richProfileImageRef  = useRef(null)
   const richCompanyLogoRef   = useRef(null)
-  const ijProfileImageRef    = useRef(null)
   const annProfileImageRef   = useRef(null)
   const annPhotoBgRef        = useRef(null)
   const annWreathRef         = useRef(null)
@@ -182,7 +169,6 @@ export default function Assets() {
   const fileInputRef      = useRef(null)
   const richPhotoInputRef = useRef(null)
   const richLogoInputRef  = useRef(null)
-  const ijPhotoInputRef   = useRef(null)
   const annPhotoInputRef  = useRef(null)
   const annLogoInputRef   = useRef(null)
 
@@ -200,8 +186,7 @@ export default function Assets() {
     const portrait = new Image()
     portrait.onload = () => {
       richProfileImageRef.current = portrait
-      ijProfileImageRef.current   = portrait
-      setSettings(prev => ({ ...prev, richProfileImage: '/GTMGen-NicoleBaerPortrait.jpg', ijProfileImage: '/GTMGen-NicoleBaerPortrait.jpg' }))
+      setSettings(prev => ({ ...prev, richProfileImage: '/GTMGen-NicoleBaerPortrait.jpg' }))
     }
     portrait.src = '/GTMGen-NicoleBaerPortrait.jpg'
 
@@ -243,7 +228,7 @@ export default function Assets() {
       if (key === 'templateType' && ['quote', 'richquote'].includes(value) && next.colorMode.startsWith('dark-') && !next.colorMode.startsWith('custom-')) {
         next.colorMode = next.colorMode.replace('dark-', '')
       }
-      if (key === 'templateType' && (value === 'ijoined' || value === 'announcement')) {
+      if (key === 'templateType' && value === 'announcement') {
         next.dims = { w: 1920, h: 1080 }
       }
       return next
@@ -336,13 +321,6 @@ export default function Assets() {
     img.src = dataUrl
   }, [update])
 
-  const handleIJProfileImageChange = useCallback((dataUrl) => {
-    if (!dataUrl) { ijProfileImageRef.current = null; update('ijProfileImage', null); return }
-    const img = new Image()
-    img.onload = () => { ijProfileImageRef.current = img; update('ijProfileImage', dataUrl) }
-    img.src = dataUrl
-  }, [update])
-
   const loadAnnPhoto = useCallback((dataUrl) => {
     return new Promise((resolve) => {
       if (!dataUrl) { annProfileImageRef.current = null; update('annProfileImage', null); resolve(); return }
@@ -419,7 +397,6 @@ export default function Assets() {
     else if (sm.templateType === 'twitter')   drawTwitterCanvas(canvas, sm, fontsReady, profileImageRef.current, floraliaDotsRef.current, lockupImageRef.current)
     else if (sm.templateType === 'richquote') drawRichQuoteCanvas(canvas, sm, fontsReady, richProfileImageRef.current, richCompanyLogoRef.current, lockupImageRef.current)
     else if (sm.templateType === 'titlecard') drawTitleCardCanvas(canvas, sm, fontsReady, floraliaDotsRef.current, lockupImageRef.current)
-    else if (sm.templateType === 'ijoined')   drawIJoinedCanvas(canvas, sm, fontsReady, ijProfileImageRef.current, floraliaDotsRef.current)
     else                                      drawCanvas(canvas, sm, fontsReady, lockupImageRef.current, quoteCompanyLogoRef.current)
   }, [fontsReady, floraliaReady]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -433,10 +410,8 @@ export default function Assets() {
       : settings.templateType === 'twitter'                 ? 'airops-tweet'
       : settings.templateType === 'richquote'               ? 'airops-richquote'
       : settings.templateType === 'titlecard'               ? 'airops-titlecard'
-      : settings.templateType === 'ijoined'                 ? 'airops-ijoined'
       : 'airops-quote'
-    const modeTag = settings.templateType === 'ijoined'       ? settings.ijMode
-      : settings.templateType === 'announcement'              ? settings.annColorMode
+    const modeTag = settings.templateType === 'announcement'  ? settings.annColorMode
       : settings.colorMode
     const a = document.createElement('a')
     a.download = filename ?? `${prefix}-${modeTag}-${ew}x${eh}.jpg`
@@ -922,91 +897,9 @@ export default function Assets() {
             <div className="div" />
           </>}
 
-          {/* I Joined */}
-          {settings.templateType === 'ijoined' && <>
-            <div className="sec">Content</div>
-            <div className="field">
-              <label>Full Name</label>
-              <input type="text" value={settings.ijName} onChange={e => update('ijName', e.target.value)} />
-            </div>
-            <div className="field">
-              <label>Role</label>
-              <input type="text" value={settings.ijRole} onChange={e => update('ijRole', e.target.value)} />
-            </div>
-            <div className="tog-row">
-              <label>(We're Hiring)</label>
-              <label className="toggle">
-                <input type="checkbox" checked={settings.ijShowHiring} onChange={e => update('ijShowHiring', e.target.checked)} />
-                <div className="ttrack" /><div className="tthumb" />
-              </label>
-            </div>
-            <div className="div" />
-            <div className="sec">Photo</div>
-            <div className="field">
-              <input ref={ijPhotoInputRef} type="file" accept="image/*" style={{ display: 'none' }}
-                onChange={e => {
-                  const file = e.target.files?.[0]; if (!file) return
-                  const reader = new FileReader()
-                  reader.onload = ev => handleIJProfileImageChange(ev.target.result)
-                  reader.readAsDataURL(file); e.target.value = ''
-                }}
-              />
-              <button className="btn-upload" onClick={() => ijPhotoInputRef.current?.click()}>
-                {settings.ijProfileImage ? '↺ Replace Photo' : '↑ Upload Photo'}
-              </button>
-              {settings.ijProfileImage && (
-                <button className="btn-clear-photo" onClick={() => handleIJProfileImageChange(null)}>✕ Remove photo</button>
-              )}
-            </div>
-            <div className="div" />
-            <div className="sec">Color Variant</div>
-            <div className="mode-grid mode-grid-wide">
-              {Object.entries(IJ_MODE_LABELS).map(([key, label]) => (
-                <button
-                  key={key}
-                  className={`mode-btn mode-ij-${key}${settings.ijMode === key ? ' active' : ''}`}
-                  onClick={() => update('ijMode', key)}
-                >
-                  {label}
-                </button>
-              ))}
-              {settings.brandColor && IJ_BRAND_MODES.map(m => (
-                <button
-                  key={m.key}
-                  className={`mode-btn brand-mode-btn${settings.ijMode === m.key ? ' active' : ''}`}
-                  style={{ '--brand-color': settings.brandColor }}
-                  onClick={() => update('ijMode', m.key)}
-                >
-                  {m.label}
-                </button>
-              ))}
-            </div>
-            <div className="div" />
-            <div className="sec">Decoration</div>
-            <div className="tog-row">
-              <label>Decoration</label>
-              <label className="toggle">
-                <input type="checkbox" checked={settings.showFloralia} onChange={e => update('showFloralia', e.target.checked)} />
-                <div className="ttrack" /><div className="tthumb" />
-              </label>
-            </div>
-            {settings.showFloralia && (
-              <div style={{ paddingLeft: 12 }}>
-                <div className="tog-row">
-                  <label>Fill style — {settings.decorationStyle === 'inverted' ? 'Negative' : 'Positive'}</label>
-                  <label className="toggle">
-                    <input type="checkbox" checked={settings.decorationStyle === 'inverted'} onChange={e => update('decorationStyle', e.target.checked ? 'inverted' : 'fill')} />
-                    <div className="ttrack" /><div className="tthumb" />
-                  </label>
-                </div>
-                <button className="btn-all" onClick={handleRefleuron} disabled={!fontsReady}>↻ Redecorate</button>
-              </div>
-            )}
-            <div className="div" />
-          </>}
 
-          {/* Color Mode — not for I Joined or Announcement (own palettes) */}
-          {settings.templateType !== 'ijoined' && settings.templateType !== 'announcement' && <>
+          {/* Color Mode — not for Announcement (own palette) */}
+          {settings.templateType !== 'announcement' && <>
             <div className="sec">Color Mode</div>
             {(() => {
               const modes = ['twitter', 'titlecard'].includes(settings.templateType)
@@ -1070,7 +963,7 @@ export default function Assets() {
           <div className="dim-grid">
             {DIMS
               .filter(({ w, h }) => {
-                if (settings.templateType === 'ijoined' || settings.templateType === 'announcement') return w === 1920 && h === 1080
+                if (settings.templateType === 'announcement') return w === 1920 && h === 1080
                 return true
               })
               .map(({ w, h, label, sub }) => (
@@ -1087,7 +980,7 @@ export default function Assets() {
           <div className="div" />
 
           <button className="btn-ex" onClick={() => exportJpeg()}>↓ Export JPEG</button>
-          {settings.templateType !== 'ijoined' && settings.templateType !== 'announcement' && (
+          {settings.templateType !== 'announcement' && (
             <button className="btn-all" onClick={exportAll}>↓ Export All 4 Sizes</button>
           )}
         </div>
