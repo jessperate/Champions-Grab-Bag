@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import CanvasPreview from '../components/CanvasPreview'
 import { loadFonts } from '../utils/loadFonts'
-import { drawChampionPostCanvas } from '../utils/drawChampionPostCanvas'
+import { drawAnnouncementCanvas } from '../utils/drawAnnouncementCanvas'
 import { generateBrandModes } from '../utils/brandPalette'
 import '../components/Sidebar.css'
 import './ChampionPost.css'
@@ -59,9 +59,9 @@ export default function ChampionPost() {
   const [stippleError, setStippleError] = useState(null)
   const [usingStipple, setUsingStipple] = useState(false)
   const profileImageRef                 = useRef(null)
-  const photoBgImageRef                 = useRef(null)
   const companyLogoRef                  = useRef(null)
   const lockupImageRef                  = useRef(null)
+  const laurelFrameRef                  = useRef(null)
   const photoInputRef                   = useRef(null)
   const logoInputRef                    = useRef(null)
   const originalPhotoUrlRef             = useRef(null)
@@ -72,9 +72,16 @@ export default function ChampionPost() {
   }, [])
 
   useEffect(() => {
-    const img = new Image()
-    img.onload = () => { photoBgImageRef.current = img; setSettings(prev => ({ ...prev })) }
-    img.src = '/ChampionPhotoBackground.png'
+    fetch('/HeadshotLaurelsOnly.svg')
+      .then(r => r.text())
+      .then(text => {
+        const blob = new Blob([text], { type: 'image/svg+xml' })
+        const url  = URL.createObjectURL(blob)
+        const img  = new Image()
+        img.onload = () => { laurelFrameRef.current = img; URL.revokeObjectURL(url); setSettings(prev => ({ ...prev })) }
+        img.src = url
+      })
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -156,7 +163,15 @@ export default function ChampionPost() {
 
   const draw = useCallback((canvas, s) => {
     const sm = s.brandColor ? { ...s, brandModes: generateBrandModes(s.brandColor) } : s
-    drawChampionPostCanvas(canvas, sm, fontsReady, profileImageRef.current, photoBgImageRef.current, companyLogoRef.current, lockupImageRef.current)
+    const mapped = {
+      ...sm,
+      annFirstName: sm.firstName,
+      annLastName:  sm.lastName,
+      annRole:      sm.roleCompany,
+      annQuote:     sm.championQuote,
+      annColorMode: sm.champColorMode,
+    }
+    drawAnnouncementCanvas(canvas, mapped, fontsReady, profileImageRef.current, laurelFrameRef.current, companyLogoRef.current, lockupImageRef.current)
   }, [fontsReady])
 
   const exportJpeg = useCallback(() => {
