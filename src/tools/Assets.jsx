@@ -90,8 +90,8 @@ function removeWhiteFromDataUrl(dataUrl) {
 const DEFAULT_SETTINGS = {
   templateType:     'quote',
   quote:            '\u201CThe most successful marketing teams in the AI era will be those who build content for how the internet actually works.\u201D',
-  firstName:        'Nicole',
-  lastName:         'Baer',
+  firstName:        'Jordan',
+  lastName:         'Miller',
   roleCompany:      'CMO, Carta',
   ctaText:          'See AirOps in Action',
   colorMode:        'green',
@@ -128,8 +128,8 @@ const DEFAULT_SETTINGS = {
   decorationStyle:    'fill',
   decorationRotation: 0,
   // Announcement
-  annFirstName:      'Lucy',
-  annLastName:       'Hoyle',
+  annFirstName:      'Jordan',
+  annLastName:       'Miller',
   annRole:           'Senior Content Engineer',
   annQuote:          '\u201CI\u2019m a Champion because getting other people excited about the possibilities in this space has been my biggest win.\u201D',
   annColorMode:      'paper-light',
@@ -369,9 +369,8 @@ export default function Assets() {
       if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`)
       if (!data.imageBase64) throw new Error('No image returned')
       const stippleUrl = `data:image/png;base64,${data.imageBase64}`
-      const stippleNoBg = await removeWhiteFromDataUrl(stippleUrl)
-      annStippleUrlRef.current = stippleNoBg
-      loadAnnPhoto(stippleNoBg)
+      annStippleUrlRef.current = stippleUrl
+      loadAnnPhoto(stippleUrl)
       setAnnUsingStipple(true)
     } catch (e) {
       setAnnStippleError(e.message)

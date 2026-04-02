@@ -85,10 +85,10 @@ function drawLaurelFrame(ctx, cw, ch, laurelFrameImage) {
 }
 
 // ── Right text panel
-function drawTextPanel(ctx, cw, ch, M, s, fontsReady, settings) {
+function drawTextPanel(ctx, cw, ch, M, s, fontsReady, settings, companyLogoImage) {
   const {
-    annFirstName = 'Connor',
-    annLastName  = 'Beaulieu',
+    annFirstName = 'Jordan',
+    annLastName  = 'Miller',
     annRole      = 'Senior SEO Manager, LegalZoom',
     annQuote     = '\u201CGetting other people excited about the possibilities in this space has been my biggest win.\u201D',
   } = settings
@@ -130,7 +130,17 @@ function drawTextPanel(ctx, cw, ch, M, s, fontsReady, settings) {
   ctx.font      = `400 ${roleSz}px ${sans}`
   ctx.fillStyle = M.roleColor
   ctx.fillText(annRole, tx, ty)
-  ty += Math.round(roleSz * 2.4)
+  ty += Math.round(roleSz * 1.5)
+
+  // ── Company logo — drawn below role, left-aligned
+  if (companyLogoImage) {
+    const logoH = Math.round(40 * s)
+    const logoW = Math.round(companyLogoImage.naturalWidth * (logoH / companyLogoImage.naturalHeight))
+    ctx.drawImage(companyLogoImage, tx, ty, logoW, logoH)
+    ty += Math.round(logoH * 1.8)
+  } else {
+    ty += Math.round(roleSz * 0.9)
+  }
 
   // ── "I'm a Champion because…" label
   const labelSz = Math.round(34 * s)
@@ -206,5 +216,5 @@ export function drawAnnouncementCanvas(canvas, settings, fontsReady, profileImag
   drawBorder(ctx, cw, ch, M.border, s)
 
   // Text panel (right side)
-  drawTextPanel(ctx, cw, ch, M, s, fontsReady, settings)
+  drawTextPanel(ctx, cw, ch, M, s, fontsReady, settings, companyLogoImage)
 }
