@@ -512,6 +512,15 @@ export default function Assets() {
               )}
             </div>
             {settings.annProfileImage && (
+              <div style={{ margin: '6px 0 4px' }}>
+                <img
+                  src={settings.annProfileImage}
+                  alt="Photo preview"
+                  style={{ width: '100%', aspectRatio: '1/1', objectFit: 'cover', borderRadius: 6, display: 'block' }}
+                />
+              </div>
+            )}
+            {settings.annProfileImage && (
               <div className="field">
                 {annStippleLoading && (
                   <div style={{ fontSize: 11, color: 'var(--label)', marginBottom: 4 }}>
