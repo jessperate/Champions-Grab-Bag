@@ -28,9 +28,22 @@ function loadImage(src) {
   })
 }
 
+// Load an SVG file via fetch → Blob URL so canvas can draw it reliably
+async function loadSvgImage(url) {
+  const res = await fetch(url)
+  const text = await res.text()
+  const blob = new Blob([text], { type: 'image/svg+xml' })
+  const objectUrl = URL.createObjectURL(blob)
+  try {
+    return await loadImage(objectUrl)
+  } finally {
+    URL.revokeObjectURL(objectUrl)
+  }
+}
+
 async function compositeWithFrame(stippleDataUrl) {
   const [frame, stipple] = await Promise.all([
-    loadImage('/HeadshotFrame.svg'),
+    loadSvgImage('/HeadshotFrame.svg'),
     loadImage(stippleDataUrl),
   ])
 
