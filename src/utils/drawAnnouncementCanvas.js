@@ -111,7 +111,7 @@ function drawTextPanel(ctx, cw, ch, M, s, dpr, fontsReady, settings, companyLogo
   let ty = Math.round(56 * s)
 
   // ── First name — Serrif VF 400
-  const nameSz = Math.round(118 * s)
+  const nameSz = Math.round(134 * s)
   ctx.font          = `400 ${nameSz}px ${serif}`
   ctx.letterSpacing = `${(-nameSz * 0.02).toFixed(2)}px`
   ctx.fillStyle     = M.firstName
@@ -135,7 +135,7 @@ function drawTextPanel(ctx, cw, ch, M, s, dpr, fontsReady, settings, companyLogo
 
   // ── Company logo — drawn below role, left-aligned; recolored on dark bg
   if (companyLogoImage) {
-    const logoH = Math.round(40 * s)
+    const logoH = Math.round(54 * s)
     const logoW = Math.round(companyLogoImage.naturalWidth * (logoH / companyLogoImage.naturalHeight))
     const isDark = annColorMode === 'paper-dark'
     if (isDark) {
@@ -148,6 +148,9 @@ function drawTextPanel(ctx, cw, ch, M, s, dpr, fontsReady, settings, companyLogo
   } else {
     ty += Math.round(roleSz * 0.9)
   }
+
+  // ── Push "I'm a Champion because…" down to at least 52% of canvas height
+  ty = Math.max(ty, Math.round(ch * 0.52))
 
   // ── "I'm a Champion because…" label
   const labelSz = Math.round(34 * s)
