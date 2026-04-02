@@ -1,4 +1,4 @@
-import { MODES, buildLogo, buildLockup, wrapText, smartQuotes } from './drawCanvas.js'
+import { MODES, buildLockup, wrapText, smartQuotes } from './drawCanvas.js'
 
 // ── Draw photo region: darkest brand color per colorway (M.ctaText) + blend
 // Stipple images (black-on-white) use multiply so white bg disappears into panel bg
@@ -8,8 +8,6 @@ function drawPhotoSection(ctx, profileImage, x, y, w, h, M, isStipple) {
 
   if (!profileImage) return
 
-  // Aspect-fill with a small overscan so JPEG edge artifacts land outside the
-  // clip region and are never visible at the section boundaries.
   const overscan = 4
   const s  = Math.max((w + overscan * 2) / (profileImage.naturalWidth  || 1),
                       (h + overscan * 2) / (profileImage.naturalHeight || 1))
@@ -26,61 +24,49 @@ function drawPhotoSection(ctx, profileImage, x, y, w, h, M, isStipple) {
   ctx.restore()
 }
 
-// ── Draw logo panel: paper bg + uploaded logo recolored to M.text
-function drawLogoSection(ctx, companyLogoImg, x, y, w, h, M) {
+// ── Lockup panel — sits below the headshot, shows champion lockup centered
+function drawLockupPanel(ctx, lockupImage, lockupColor, dpr, x, y, w, h, M) {
   ctx.fillStyle = M.bg
   ctx.fillRect(x, y, w, h)
 
-  if (!companyLogoImg) return
+  if (!lockupImage) return
 
-  const nw = companyLogoImg.naturalWidth  || 300
-  const nh = companyLogoImg.naturalHeight || 150
-  const padX = Math.round(w * 0.14)
-  const padY = Math.round(h * 0.20)
-  const s     = Math.min((w - padX * 2) / nw, (h - padY * 2) / nh, 1)
-  const logoW = Math.round(nw * s)
-  const logoH = Math.round(nh * s)
-  const logoX = x + Math.round((w - logoW) / 2)
-  const logoY = y + Math.round((h - logoH) / 2)
-
-  // Recolor: draw image then source-atop fill → logo appears in M.text
-  const off = document.createElement('canvas')
-  off.width  = logoW
-  off.height = logoH
-  const oc   = off.getContext('2d')
-  oc.drawImage(companyLogoImg, 0, 0, logoW, logoH)
-  oc.globalCompositeOperation = 'source-atop'
-  oc.fillStyle = M.text
-  oc.fillRect(0, 0, logoW, logoH)
-
-  ctx.drawImage(off, logoX, logoY)
+  const lkH   = Math.round(h * 0.42)
+  const lkW   = Math.round(1179 * lkH / 291)
+  const lkBmp = buildLockup(lockupImage, lockupColor, Math.round(lkW * dpr), Math.round(lkH * dpr))
+  const lkX   = x + Math.round((w - lkW) / 2)
+  const lkY   = y + Math.round((h - lkH) / 2)
+  ctx.drawImage(lkBmp, lkX, lkY, lkW, lkH)
 }
 
-// ── Draw the content (name + role pill + quote) within a given rect
-// justify-between: customer block at top, quote at bottom
-function drawContent(ctx, { x, y, w, h, pad, firstName, lastName, roleCompany, quote, nameSz, quoteSzBase, quoteLH, M, serif, sans, mono }) {
-  // Hard-clip to this section so nothing can overflow into adjacent photo/logo regions
+// ── Content panel: name + role pill + company logo (top), quote (bottom)
+function drawContent(ctx, { x, y, w, h, pad, firstName, lastName, roleCompany, quote,
+                            nameSz, quoteSzBase, quoteLH, M, serif, sans, mono,
+                            companyLogoImage, isDark, dpr }) {
   ctx.save()
   ctx.beginPath()
   ctx.rect(x, y, w, h)
   ctx.clip()
 
-  const innerW      = w - pad * 2
+  const innerW       = w - pad * 2
   const nameTracking = `${(-0.04 * nameSz).toFixed(2)}px`
-  const nameLH      = nameSz * 0.84   // Figma: leading-[0.84]
-  const PILL_SZ     = 32              // matches Quote Block: Saans Mono 500 32px
-  const PILL_PAD_X  = 16
-  const PILL_PAD_Y  = 2
-  const pillH       = Math.round(PILL_SZ * 1.3 + PILL_PAD_Y * 2)
+  const nameLH       = nameSz * 0.84
+  const PILL_SZ      = 32
+  const PILL_PAD_X   = 16
+  const PILL_PAD_Y   = 2
+  const pillH        = Math.round(PILL_SZ * 1.3 + PILL_PAD_Y * 2)
+
+  const logoH   = companyLogoImage ? Math.round(nameSz * 0.36) : 0
+  const logoGap = companyLogoImage ? Math.round(nameSz * 0.28) : 0
 
   // ── Customer block (top)
   let cy = y + pad
 
   // First name — Serrif VF 400
-  ctx.fillStyle    = M.text
-  ctx.font         = `400 ${nameSz}px ${serif}`
+  ctx.fillStyle     = M.text
+  ctx.font          = `400 ${nameSz}px ${serif}`
   ctx.letterSpacing = nameTracking
-  ctx.textBaseline = 'top'
+  ctx.textBaseline  = 'top'
   ctx.fillText(firstName, x + pad, cy)
   cy += nameLH + 4
 
@@ -89,9 +75,9 @@ function drawContent(ctx, { x, y, w, h, pad, firstName, lastName, roleCompany, q
   ctx.fillText(lastName, x + pad, cy)
   cy += nameLH + 24
 
-  // Role pill — Saans Mono 500 32px uppercase, matches Quote Block exactly
+  // Role pill
   const pillText = roleCompany.toUpperCase()
-  ctx.font         = `500 ${PILL_SZ}px ${mono}`
+  ctx.font          = `500 ${PILL_SZ}px ${mono}`
   ctx.letterSpacing = '1.92px'
   const pillTW = ctx.measureText(pillText).width
   const pillW  = pillTW + PILL_PAD_X * 2
@@ -100,22 +86,33 @@ function drawContent(ctx, { x, y, w, h, pad, firstName, lastName, roleCompany, q
   ctx.fillStyle = M.pill
   ctx.fillRect(x + pad, cy, pillW, pillH)
 
-  ctx.font         = `500 ${PILL_SZ}px ${mono}`
+  ctx.font          = `500 ${PILL_SZ}px ${mono}`
   ctx.letterSpacing = '1.92px'
-  ctx.fillStyle    = M.pillText
-  ctx.textBaseline = 'top'
+  ctx.fillStyle     = M.pillText
+  ctx.textBaseline  = 'top'
   ctx.fillText(pillText, x + pad + PILL_PAD_X, cy + PILL_PAD_Y)
   ctx.letterSpacing = '0px'
+  cy += pillH + 20
+
+  // ── Company logo below pill
+  if (companyLogoImage) {
+    const logoW = Math.round(companyLogoImage.naturalWidth * (logoH / companyLogoImage.naturalHeight))
+    if (isDark) {
+      const logoBmp = buildLockup(companyLogoImage, M.text, Math.round(logoW * dpr), Math.round(logoH * dpr))
+      ctx.drawImage(logoBmp, x + pad, cy, logoW, logoH)
+    } else {
+      ctx.drawImage(companyLogoImage, x + pad, cy, logoW, logoH)
+    }
+  }
 
   // ── Quote (bottom — justify-between)
-  // Auto-shrink to fit available height above the quote region
-  const customerH = nameLH + 4 + nameLH + 24 + pillH
-  const availH    = h - pad * 2 - customerH - 32  // 32 = minimum gap between blocks
+  const customerH = nameLH + 4 + nameLH + 24 + pillH + 20 + logoH + logoGap
+  const availH    = h - pad * 2 - customerH - 32
 
   let qFont = quoteSzBase
   let qLines
   for (let f = quoteSzBase; f >= 28; f--) {
-    ctx.font = `400 ${f}px ${serif}`
+    ctx.font          = `400 ${f}px ${serif}`
     ctx.letterSpacing = '0px'
     qLines = wrapText(ctx, quote, innerW)
     const heightFits = qLines.length * f * quoteLH <= availH
@@ -123,21 +120,21 @@ function drawContent(ctx, { x, y, w, h, pad, firstName, lastName, roleCompany, q
     if (heightFits && widthFits) { qFont = f; break }
   }
 
-  ctx.font         = `400 ${qFont}px ${serif}`
+  ctx.font          = `400 ${qFont}px ${serif}`
   ctx.letterSpacing = '0px'
   qLines = wrapText(ctx, quote, innerW)
-  const qLineH    = qFont * quoteLH
-  const quoteH    = qLines.length * qLineH
-  const quoteY    = y + h - pad - quoteH
+  const qLineH = qFont * quoteLH
+  const quoteH = qLines.length * qLineH
+  const quoteY = y + h - pad - quoteH
 
-  ctx.fillStyle    = M.ctaText   // Figma: color-4 (dark accent) for quote text
+  ctx.fillStyle    = M.ctaText
   ctx.textBaseline = 'top'
   qLines.forEach((line, i) => ctx.fillText(line, x + pad, quoteY + i * qLineH))
 
-  ctx.restore()  // release clip
+  ctx.restore()
 }
 
-// ── Guideline helper: drawn last so lines sit on top of all section fills
+// ── Guideline helper
 function strokeLine(ctx, x1, y1, x2, y2) {
   ctx.beginPath()
   ctx.moveTo(x1, y1)
@@ -166,16 +163,16 @@ export function drawRichQuoteCanvas(canvas, settings, fontsReady, profileImage, 
   const ctx = canvas.getContext('2d')
   if (dpr !== 1) ctx.scale(dpr, dpr)
 
-  const isLand    = cw > ch
-  const isStory   = ch > cw * 1.5
-  const isPortrait = !isLand && !isStory && ch > cw   // 1080×1350
+  const isLand     = cw > ch
+  const isStory    = ch > cw * 1.5
+  const isPortrait = !isLand && !isStory && ch > cw
 
-  const serif = fontsReady ? "'Serrif VF', Georgia, serif"         : 'Georgia, serif'
-  const sans  = fontsReady ? "'Saans', sans-serif"                 : 'sans-serif'
-  const mono  = fontsReady ? "'Saans Mono', 'DM Mono', monospace"  : 'monospace'
+  const serif = fontsReady ? "'Serrif VF', Georgia, serif"        : 'Georgia, serif'
+  const sans  = fontsReady ? "'Saans', sans-serif"                : 'sans-serif'
+  const mono  = fontsReady ? "'Saans Mono', 'DM Mono', monospace" : 'monospace'
 
-  const M  = settings.brandModes?.quote?.[colorMode] ?? MODES[colorMode] ?? MODES.green
-  const isDark = colorMode === 'custom-dark'
+  const M           = settings.brandModes?.quote?.[colorMode] ?? MODES[colorMode] ?? MODES.green
+  const isDark      = colorMode === 'custom-dark'
   const lockupColor = isDark ? '#ffffff' : M.text
 
   // ── Background
@@ -189,99 +186,72 @@ export function drawRichQuoteCanvas(canvas, settings, fontsReady, profileImage, 
     firstName: richFirstName, lastName: richLastName,
     roleCompany: richRoleCompany, quote: richQuoteText,
     M, serif, sans, mono,
-  }
-
-  // ── Shared lockup helper
-  function drawLockup(lkX, lkY) {
-    if (!lockupImage) return
-    const lkH   = Math.round(ch * 0.065)
-    const lkW   = Math.round(1179 * lkH / 291)
-    const lkBmp = buildLockup(lockupImage, lockupColor, Math.round(lkW * dpr), Math.round(lkH * dpr))
-    ctx.fillStyle = M.bg
-    ctx.fillRect(lkX, lkY, lkW, lkH)
-    ctx.drawImage(lkBmp, lkX, lkY, lkW, lkH)
+    companyLogoImage, isDark, dpr,
   }
 
   if (isLand) {
-    // ── Landscape: content | photo+logo  (flip swaps left/right)
-    const splitX     = Math.round(cw / 2)
-    const logoPanelH = 203
-    const photoH     = ch - logoPanelH
-    const mediaX     = richFlip ? 0      : splitX
-    const contentX   = richFlip ? splitX : 0
-    const pad        = 53
+    // ── Landscape: content | photo + lockup panel  (flip swaps left/right)
+    const splitX      = Math.round(cw / 2)
+    const lockupPanelH = 203
+    const photoH      = ch - lockupPanelH
+    const mediaX      = richFlip ? 0      : splitX
+    const contentX    = richFlip ? splitX : 0
 
-    drawPhotoSection(ctx, profileImage,    mediaX, 0,      splitX, photoH,     M, richIsStipple)
-    drawLogoSection(ctx, companyLogoImage, mediaX, photoH, splitX, logoPanelH, M)
-    drawContent(ctx, { x: contentX, y: 0, w: splitX, h: ch, pad,
+    drawPhotoSection(ctx, profileImage, mediaX, 0,      splitX, photoH,      M, richIsStipple)
+    drawLockupPanel(ctx, lockupImage, lockupColor, dpr, mediaX, photoH, splitX, lockupPanelH, M)
+    drawContent(ctx, { x: contentX, y: 0, w: splitX, h: ch, pad: 53,
       ...contentArgs, nameSz: 120, quoteSzBase: 64, quoteLH: 1.2 })
 
-    const lkH = Math.round(ch * 0.065)
-    drawLockup(contentX + pad, ch - pad - lkH)
-
-    strokeLine(ctx, splitX,           0,      splitX,           ch)
+    strokeLine(ctx, splitX, 0,      splitX, ch)
     strokeLine(ctx, mediaX === 0 ? 0 : splitX, photoH, mediaX === 0 ? splitX : cw, photoH)
 
   } else if (isStory) {
-    // ── Story 9:16: content | headshot row  (flip swaps top/bottom)
+    // ── Story 9:16: content | headshot + lockup row  (flip swaps top/bottom)
     const topPad       = 240
     const contentH     = 618
     const headshotRowH = 540
     const splitX       = Math.round(cw / 2)
-    const rowY         = richFlip ? topPad                 : topPad + contentH
-    const contentY     = richFlip ? topPad + headshotRowH  : topPad
-    const pad          = 40
+    const rowY         = richFlip ? topPad                : topPad + contentH
+    const contentY     = richFlip ? topPad + headshotRowH : topPad
 
-    drawPhotoSection(ctx, profileImage,    0,      rowY, splitX, headshotRowH, M, richIsStipple)
-    drawLogoSection(ctx, companyLogoImage, splitX, rowY, splitX, headshotRowH, M)
-    drawContent(ctx, { x: 0, y: contentY, w: cw, h: contentH, pad,
+    drawPhotoSection(ctx, profileImage, 0,      rowY, splitX, headshotRowH, M, richIsStipple)
+    drawLockupPanel(ctx, lockupImage, lockupColor, dpr, splitX, rowY, splitX, headshotRowH, M)
+    drawContent(ctx, { x: 0, y: contentY, w: cw, h: contentH, pad: 40,
       ...contentArgs, nameSz: 96, quoteSzBase: 56, quoteLH: 1.14 })
 
-    const lkH = Math.round(ch * 0.065)
-    drawLockup(pad, ch - pad - lkH)
-
-    strokeLine(ctx, 0,      rowY,                   cw, rowY)
-    strokeLine(ctx, splitX, rowY,                   splitX, rowY + headshotRowH)
-    strokeLine(ctx, 0,      rowY + headshotRowH,    cw, rowY + headshotRowH)
+    strokeLine(ctx, 0,      rowY,                cw,     rowY)
+    strokeLine(ctx, splitX, rowY,                splitX, rowY + headshotRowH)
+    strokeLine(ctx, 0,      rowY + headshotRowH, cw,     rowY + headshotRowH)
 
   } else if (isPortrait) {
-    // ── Portrait 4:5: content | headshot row  (flip swaps top/bottom)
+    // ── Portrait 4:5: content | headshot + lockup row  (flip swaps top/bottom)
     const headshotRowH = 540
     const contentH     = ch - headshotRowH
     const splitX       = Math.round(cw / 2)
-    const rowY         = richFlip ? 0          : contentH
+    const rowY         = richFlip ? 0           : contentH
     const contentY     = richFlip ? headshotRowH : 0
-    const pad          = 40
 
-    drawPhotoSection(ctx, profileImage,    0,      rowY, splitX, headshotRowH, M, richIsStipple)
-    drawLogoSection(ctx, companyLogoImage, splitX, rowY, splitX, headshotRowH, M)
-    drawContent(ctx, { x: 0, y: contentY, w: cw, h: contentH, pad,
+    drawPhotoSection(ctx, profileImage, 0,      rowY, splitX, headshotRowH, M, richIsStipple)
+    drawLockupPanel(ctx, lockupImage, lockupColor, dpr, splitX, rowY, splitX, headshotRowH, M)
+    drawContent(ctx, { x: 0, y: contentY, w: cw, h: contentH, pad: 40,
       ...contentArgs, nameSz: 96, quoteSzBase: 56, quoteLH: 1.14 })
 
-    const lkH = Math.round(ch * 0.065)
-    drawLockup(pad, contentY + contentH - pad - lkH)
-
-    // Only draw the horizontal that separates content from headshot row — not the canvas-edge line
     const divY = richFlip ? rowY + headshotRowH : rowY
     strokeLine(ctx, 0,      divY, cw,     divY)
     strokeLine(ctx, splitX, rowY, splitX, rowY + headshotRowH)
 
   } else {
-    // ── Square: content | photo+logo  (flip swaps left/right)
-    const splitX     = Math.round(cw / 2)
-    const logoPanelH = 158
-    const photoH     = ch - logoPanelH
-    const mediaX     = richFlip ? 0      : splitX
-    const contentX   = richFlip ? splitX : 0
-    const pad        = 40
+    // ── Square: content | photo + lockup panel  (flip swaps left/right)
+    const splitX       = Math.round(cw / 2)
+    const lockupPanelH = 158
+    const photoH       = ch - lockupPanelH
+    const mediaX       = richFlip ? 0      : splitX
+    const contentX     = richFlip ? splitX : 0
 
-    drawPhotoSection(ctx, profileImage,    mediaX, 0,      splitX, photoH,     M, richIsStipple)
-    drawLogoSection(ctx, companyLogoImage, mediaX, photoH, splitX, logoPanelH, M)
-    drawContent(ctx, { x: contentX, y: 0, w: splitX, h: ch, pad,
+    drawPhotoSection(ctx, profileImage, mediaX, 0,      splitX, photoH,      M, richIsStipple)
+    drawLockupPanel(ctx, lockupImage, lockupColor, dpr, mediaX, photoH, splitX, lockupPanelH, M)
+    drawContent(ctx, { x: contentX, y: 0, w: splitX, h: ch, pad: 40,
       ...contentArgs, nameSz: 96, quoteSzBase: 56, quoteLH: 1.14 })
-
-    const lkH = Math.round(ch * 0.065)
-    drawLockup(contentX + pad, ch - pad - lkH)
 
     strokeLine(ctx, splitX,                          0,      splitX,                          ch)
     strokeLine(ctx, mediaX === 0 ? 0 : splitX, photoH, mediaX === 0 ? splitX : cw, photoH)

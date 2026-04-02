@@ -346,21 +346,21 @@ export default function ChampionPost() {
               className="brand-color-hex"
               value={brandColorDraft !== '' ? brandColorDraft : settings.brandColor}
               placeholder="#hex"
-              onChange={e => {
-                const v = e.target.value
-                setBrandColorDraft(v)
+              onChange={e => setBrandColorDraft(e.target.value)}
+              onBlur={() => {
+                const v = brandColorDraft
                 if (/^#[0-9a-fA-F]{6}$/.test(v)) {
                   update('brandColor', v)
                   if (!settings.champColorMode.startsWith('custom-')) update('champColorMode', 'custom-light')
                 } else if (v === '') {
                   update('brandColor', '')
                   if (settings.champColorMode.startsWith('custom-')) update('champColorMode', 'paper-light')
-                }
-              }}
-              onBlur={() => {
-                if (!/^#[0-9a-fA-F]{6}$/.test(brandColorDraft) && brandColorDraft !== '') {
+                } else {
                   setBrandColorDraft(settings.brandColor)
                 }
+              }}
+              onKeyDown={e => {
+                if (e.key === 'Enter') e.target.blur()
               }}
             />
             {settings.brandColor && (

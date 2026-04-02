@@ -972,16 +972,14 @@ export default function Assets() {
               placeholder="#rrggbb"
               value={brandColorDraft !== '' ? brandColorDraft : settings.brandColor}
               maxLength={7}
-              onChange={e => {
-                const v = e.target.value
-                setBrandColorDraft(v)
-                if (/^#[0-9a-fA-F]{6}$/.test(v) || v === '') update('brandColor', v)
-              }}
+              onChange={e => setBrandColorDraft(e.target.value)}
               onBlur={() => {
-                if (!/^#[0-9a-fA-F]{6}$/.test(brandColorDraft) && brandColorDraft !== '') {
-                  setBrandColorDraft(settings.brandColor)
-                }
+                const v = brandColorDraft
+                if (/^#[0-9a-fA-F]{6}$/.test(v)) update('brandColor', v)
+                else if (v === '') update('brandColor', '')
+                else setBrandColorDraft(settings.brandColor)
               }}
+              onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }}
             />
             {settings.brandColor && (
               <button className="btn-clear-photo" onClick={() => { setBrandColorDraft(''); update('brandColor', '') }}>✕</button>
