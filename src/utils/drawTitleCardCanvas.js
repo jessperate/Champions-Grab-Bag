@@ -382,15 +382,15 @@ export function drawTitleCardCanvas(canvas, settings, fontsReady, floralia, lock
     ctx.textBaseline = 'top'
   }
 
-  // ── AirOps Champion lockup — bottom center, above the bottom guide
+  // ── AirOps Champion lockup — bottom-left, flush to bottom guide
+  // Lockup SVG is 1179×291: "airOps" stacked above "Champion"
   if (lockupImage) {
-    const lkH = isStory ? 80 : 56
-    // Lockup SVG natural dimensions: 1179 × 291
+    const lkH = Math.round(cw * (isStory ? 0.18 : 0.16))
     const lkW = Math.round(1179 * lkH / 291)
     const lkColor = isDark ? (TM.logoColor ?? '#ffffff') : M.text
     const lkBmp = buildLockup(lockupImage, lkColor, Math.round(lkW * dpr), Math.round(lkH * dpr))
-    const lkX = Math.round((cw - lkW) / 2)
-    const lkY = ch - (isStory ? ctaPadB - lkH - 24 : guideX + lkH)
+    const lkX = guideX
+    const lkY = ch - (isStory ? ctaPadB - 8 : guideX) - lkH
     ctx.fillStyle = bg
     ctx.fillRect(lkX, lkY, lkW, lkH)
     ctx.drawImage(lkBmp, lkX, lkY, lkW, lkH)
