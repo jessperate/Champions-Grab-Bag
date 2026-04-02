@@ -167,7 +167,7 @@ export default function Assets() {
   const [richStippleLoading, setRichStippleLoading] = useState(false)
   const [richStippleError, setRichStippleError]     = useState(null)
   const [richUsingStipple, setRichUsingStipple]     = useState(false)
-  const [brandColorDraft, setBrandColorDraft]       = useState('')
+  const [brandColorDraft, setBrandColorDraft]       = useState(null)
 
   const fileInputRef      = useRef(null)
   const richPhotoInputRef = useRef(null)
@@ -964,25 +964,26 @@ export default function Assets() {
               type="color"
               className="brand-color-picker"
               value={settings.brandColor || '#008c44'}
-              onChange={e => { setBrandColorDraft(e.target.value); update('brandColor', e.target.value) }}
+              onChange={e => update('brandColor', e.target.value)}
             />
             <input
               type="text"
               className="brand-color-hex"
               placeholder="#rrggbb"
-              value={brandColorDraft !== '' ? brandColorDraft : settings.brandColor}
+              value={brandColorDraft !== null ? brandColorDraft : (settings.brandColor || '')}
               maxLength={7}
+              onFocus={() => setBrandColorDraft(settings.brandColor || '')}
               onChange={e => setBrandColorDraft(e.target.value)}
-              onBlur={() => {
-                const v = brandColorDraft
+              onBlur={e => {
+                const v = e.target.value
+                setBrandColorDraft(null)
                 if (/^#[0-9a-fA-F]{6}$/.test(v)) update('brandColor', v)
                 else if (v === '') update('brandColor', '')
-                else setBrandColorDraft(settings.brandColor)
               }}
               onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }}
             />
             {settings.brandColor && (
-              <button className="btn-clear-photo" onClick={() => { setBrandColorDraft(''); update('brandColor', '') }}>✕</button>
+              <button className="btn-clear-photo" onClick={() => { setBrandColorDraft(null); update('brandColor', '') }}>✕</button>
             )}
           </div>
           <div className="div" />

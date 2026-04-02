@@ -54,7 +54,7 @@ const DIMS = [
 export default function ChampionPost() {
   const [settings, setSettings]         = useState({ ...DEFAULT_SETTINGS })
   const [fontsReady, setFontsReady]     = useState(false)
-  const [brandColorDraft, setBrandColorDraft] = useState('')
+  const [brandColorDraft, setBrandColorDraft] = useState(null)
   const [stippleLoading, setStippleLoading] = useState(false)
   const [stippleError, setStippleError] = useState(null)
   const [usingStipple, setUsingStipple] = useState(false)
@@ -350,33 +350,29 @@ export default function ChampionPost() {
               className="brand-color-picker"
               value={settings.brandColor || '#008c44'}
               onChange={e => {
-                const v = e.target.value
-                setBrandColorDraft(v)
-                update('brandColor', v)
+                update('brandColor', e.target.value)
                 if (!settings.champColorMode.startsWith('custom-')) update('champColorMode', 'custom-light')
               }}
             />
             <input
               type="text"
               className="brand-color-hex"
-              value={brandColorDraft !== '' ? brandColorDraft : settings.brandColor}
+              value={brandColorDraft !== null ? brandColorDraft : (settings.brandColor || '')}
               placeholder="#hex"
+              onFocus={() => setBrandColorDraft(settings.brandColor || '')}
               onChange={e => setBrandColorDraft(e.target.value)}
-              onBlur={() => {
-                const v = brandColorDraft
+              onBlur={e => {
+                const v = e.target.value
+                setBrandColorDraft(null)
                 if (/^#[0-9a-fA-F]{6}$/.test(v)) {
                   update('brandColor', v)
                   if (!settings.champColorMode.startsWith('custom-')) update('champColorMode', 'custom-light')
                 } else if (v === '') {
                   update('brandColor', '')
                   if (settings.champColorMode.startsWith('custom-')) update('champColorMode', 'paper-light')
-                } else {
-                  setBrandColorDraft(settings.brandColor)
                 }
               }}
-              onKeyDown={e => {
-                if (e.key === 'Enter') e.target.blur()
-              }}
+              onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }}
             />
             {settings.brandColor && (
               <button className="brand-color-clear" onClick={() => {
