@@ -85,12 +85,13 @@ function drawLaurelFrame(ctx, cw, ch, laurelFrameImage) {
 }
 
 // ── Right text panel
-function drawTextPanel(ctx, cw, ch, M, s, fontsReady, settings, companyLogoImage) {
+function drawTextPanel(ctx, cw, ch, M, s, dpr, fontsReady, settings, companyLogoImage) {
   const {
-    annFirstName = 'Jordan',
-    annLastName  = 'Miller',
-    annRole      = 'Senior SEO Manager, LegalZoom',
-    annQuote     = '\u201CGetting other people excited about the possibilities in this space has been my biggest win.\u201D',
+    annFirstName  = 'Jordan',
+    annLastName   = 'Miller',
+    annRole       = 'Senior SEO Manager, LegalZoom',
+    annQuote      = '\u201CGetting other people excited about the possibilities in this space has been my biggest win.\u201D',
+    annColorMode  = 'paper-light',
   } = settings
 
   const serif = fontsReady ? "'Serrif VF', Georgia, serif" : 'Georgia, serif'
@@ -132,11 +133,17 @@ function drawTextPanel(ctx, cw, ch, M, s, fontsReady, settings, companyLogoImage
   ctx.fillText(annRole, tx, ty)
   ty += Math.round(roleSz * 1.5)
 
-  // ── Company logo — drawn below role, left-aligned
+  // ── Company logo — drawn below role, left-aligned; recolored on dark bg
   if (companyLogoImage) {
     const logoH = Math.round(40 * s)
     const logoW = Math.round(companyLogoImage.naturalWidth * (logoH / companyLogoImage.naturalHeight))
-    ctx.drawImage(companyLogoImage, tx, ty, logoW, logoH)
+    const isDark = annColorMode === 'paper-dark'
+    if (isDark) {
+      const logoBmp = buildLockup(companyLogoImage, M.lastName, Math.round(logoW * dpr), Math.round(logoH * dpr))
+      ctx.drawImage(logoBmp, tx, ty, logoW, logoH)
+    } else {
+      ctx.drawImage(companyLogoImage, tx, ty, logoW, logoH)
+    }
     ty += Math.round(logoH * 1.8)
   } else {
     ty += Math.round(roleSz * 0.9)
@@ -216,5 +223,5 @@ export function drawAnnouncementCanvas(canvas, settings, fontsReady, profileImag
   drawBorder(ctx, cw, ch, M.border, s)
 
   // Text panel (right side)
-  drawTextPanel(ctx, cw, ch, M, s, fontsReady, settings, companyLogoImage)
+  drawTextPanel(ctx, cw, ch, M, s, dpr, fontsReady, settings, companyLogoImage)
 }
