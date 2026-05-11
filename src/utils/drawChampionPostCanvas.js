@@ -88,11 +88,18 @@ function drawTextSide(ctx, x, y, w, h, settings, M, scale, fontsReady, companyLo
   ctx.fillStyle    = M.text
   ctx.fillText(firstName, x + pad, y + pad)
 
-  // 2. Last name — Saans 400, ~132px
-  const lastSz = Math.round(132 * scale)
-  const lastLH = lastSz * 1.0
-  ctx.font         = `400 ${lastSz}px ${sans}`
+  // 2. Last name — Saans 400, ~132px, auto-shrink to fit innerW
+  const lastSzBase = Math.round(132 * scale)
+  const lastSzMin  = Math.round(48 * scale)
+  let lastSz = lastSzBase
+  ctx.font          = `400 ${lastSz}px ${sans}`
   ctx.letterSpacing = `${(-lastSz * 0.02).toFixed(2)}px`
+  while (lastSz > lastSzMin && ctx.measureText(lastName).width > innerW) {
+    lastSz -= 2
+    ctx.font          = `400 ${lastSz}px ${sans}`
+    ctx.letterSpacing = `${(-lastSz * 0.02).toFixed(2)}px`
+  }
+  const lastLH = lastSz * 1.0
   ctx.fillStyle    = M.lastName
   ctx.fillText(lastName, x + pad, y + pad + firstLH + 4)
 
