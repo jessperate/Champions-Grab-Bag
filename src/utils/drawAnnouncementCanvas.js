@@ -140,11 +140,19 @@ function drawTextPanel(ctx, cw, ch, M, s, dpr, fontsReady, settings, companyLogo
   ctx.fillText(annFirstName, tx, ty)
   ty += Math.round(nameSz * 1.05)
 
-  // ── Last name — Serrif VF 400
-  ctx.font          = `400 ${nameSz}px ${serif}`
+  // ── Last name — Serrif VF 400, auto-shrink to fit maxW
+  const lastSzMin = Math.round(48 * s)
+  let lastSz = nameSz
+  ctx.font          = `400 ${lastSz}px ${serif}`
+  ctx.letterSpacing = `${(-lastSz * 0.02).toFixed(2)}px`
+  while (lastSz > lastSzMin && ctx.measureText(annLastName).width > maxW) {
+    lastSz -= 2
+    ctx.font          = `400 ${lastSz}px ${serif}`
+    ctx.letterSpacing = `${(-lastSz * 0.02).toFixed(2)}px`
+  }
   ctx.fillStyle     = M.lastName
   ctx.fillText(annLastName, tx, ty)
-  ty += Math.round(nameSz * 1.2)
+  ty += Math.round(lastSz * 1.2)
 
   ctx.letterSpacing = '0px'
 
