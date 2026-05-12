@@ -322,9 +322,8 @@ export default function Assets() {
       if (!data.imageBase64) throw new Error('No image returned')
       const stippleUrl = `data:image/png;base64,${data.imageBase64}`
       const grayUrl = await desaturateDataUrl(stippleUrl)
-      const stippleNoBg = await removeWhiteFromDataUrl(grayUrl)
-      richStippleUrlRef.current = stippleNoBg
-      loadRichPhoto(stippleNoBg)
+      richStippleUrlRef.current = grayUrl
+      loadRichPhoto(grayUrl)
       setRichUsingStipple(true)
     } catch (e) {
       setRichStippleError(e.message)
