@@ -84,7 +84,9 @@ function drawPhotoPanel(ctx, M, cw, ch, profileImage) {
     ctx.beginPath()
     ctx.rect(0, 0, pw, ch)
     ctx.clip()
+    ctx.filter = 'grayscale(1) contrast(1.05)'
     ctx.drawImage(profileImage, (pw - iw) / 2, (ch - ih) / 2, iw, ih)
+    ctx.filter = 'none'
     ctx.restore()
   }
 }

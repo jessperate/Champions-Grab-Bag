@@ -13,11 +13,13 @@ export default async function handler(req, res) {
   if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY environment variable is not set' })
 
   const prompt =
-    'Transform this photo into a black and white stipple/engraving illustration effect on a pure white background. ' +
-    'Remove all background elements completely — only the person should remain on a solid white background. ' +
-    'Create a high-contrast stipple portrait with fine dot patterns for shading, crosshatching for darker areas, ' +
-    'and clean white highlights. The style should look like a detailed editorial engraving or vintage portrait illustration. ' +
-    'Output the illustration with a pure white (#ffffff) background.'
+    'Transform this photo into a PURE BLACK AND WHITE (monochrome, no color) stipple/engraving illustration on a pure white background. ' +
+    'CRITICAL: the output must contain ONLY pure black (#000000) ink strokes/dots on a pure white (#ffffff) background. ' +
+    'NO color tints whatsoever — no green, no sepia, no blue, no warm or cool casts. Strictly grayscale, leaning pure black ink on white paper. ' +
+    'Remove all background elements completely — only the person should remain, on a solid pure-white background. ' +
+    'Create a high-contrast stipple portrait with fine black dot patterns for shading, black crosshatching for darker areas, ' +
+    'and clean pure-white highlights. The style should look like a detailed editorial engraving or vintage portrait illustration printed in black ink on white paper. ' +
+    'Output the illustration as a pure black-on-white (#000000 on #ffffff) image with NO color tinting.'
 
   const requestBody = {
     contents: [
