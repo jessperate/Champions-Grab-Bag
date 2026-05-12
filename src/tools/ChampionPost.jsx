@@ -23,6 +23,32 @@ function compressImageToBase64(dataUrl, maxPx, quality) {
   })
 }
 
+// Bake grayscale into image data via per-pixel luminance — independent of
+// ctx.filter support. Gemini's "stipple" output sometimes carries a green/sepia
+// cast; this guarantees pure B&W regardless of what the model returns.
+function desaturateDataUrl(dataUrl) {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      const c = document.createElement('canvas')
+      c.width = img.width
+      c.height = img.height
+      const cx = c.getContext('2d')
+      cx.drawImage(img, 0, 0)
+      const id = cx.getImageData(0, 0, c.width, c.height)
+      const d = id.data
+      for (let i = 0; i < d.length; i += 4) {
+        const y = 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]
+        d[i] = d[i + 1] = d[i + 2] = y
+      }
+      cx.putImageData(id, 0, 0)
+      resolve(c.toDataURL('image/png'))
+    }
+    img.onerror = () => resolve(dataUrl)
+    img.src = dataUrl
+  })
+}
+
 const DEFAULT_SETTINGS = {
   firstName:      'Jordan',
   lastName:       'Miller',
@@ -132,8 +158,9 @@ export default function ChampionPost() {
       if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`)
       if (!data.imageBase64) throw new Error('No image returned')
       const stippleUrl = `data:image/png;base64,${data.imageBase64}`
-      stipplePhotoUrlRef.current = stippleUrl
-      loadPhotoIntoCanvas(stippleUrl)
+      const grayUrl    = await desaturateDataUrl(stippleUrl)
+      stipplePhotoUrlRef.current = grayUrl
+      loadPhotoIntoCanvas(grayUrl)
       setUsingStipple(true)
     } catch (e) {
       setStippleError(e.message)
