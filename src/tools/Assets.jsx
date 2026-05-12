@@ -66,6 +66,32 @@ function compressImageToBase64(dataUrl, maxPx, quality) {
   })
 }
 
+// Bake grayscale into image data via per-pixel luminance — independent of
+// ctx.filter support. Gemini's "stipple" output sometimes carries a green/sepia
+// cast; this guarantees pure B&W regardless of what the model returns.
+function desaturateDataUrl(dataUrl) {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      const c = document.createElement('canvas')
+      c.width = img.width
+      c.height = img.height
+      const cx = c.getContext('2d')
+      cx.drawImage(img, 0, 0)
+      const id = cx.getImageData(0, 0, c.width, c.height)
+      const d = id.data
+      for (let i = 0; i < d.length; i += 4) {
+        const y = 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]
+        d[i] = d[i + 1] = d[i + 2] = y
+      }
+      cx.putImageData(id, 0, 0)
+      resolve(c.toDataURL('image/png'))
+    }
+    img.onerror = () => resolve(dataUrl)
+    img.src = dataUrl
+  })
+}
+
 // Strip near-white background from a stipple dataUrl (Gemini returns white bg)
 function removeWhiteFromDataUrl(dataUrl) {
   return new Promise((resolve) => {
@@ -295,7 +321,8 @@ export default function Assets() {
       if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`)
       if (!data.imageBase64) throw new Error('No image returned')
       const stippleUrl = `data:image/png;base64,${data.imageBase64}`
-      const stippleNoBg = await removeWhiteFromDataUrl(stippleUrl)
+      const grayUrl = await desaturateDataUrl(stippleUrl)
+      const stippleNoBg = await removeWhiteFromDataUrl(grayUrl)
       richStippleUrlRef.current = stippleNoBg
       loadRichPhoto(stippleNoBg)
       setRichUsingStipple(true)
@@ -374,8 +401,9 @@ export default function Assets() {
       if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`)
       if (!data.imageBase64) throw new Error('No image returned')
       const stippleUrl = `data:image/png;base64,${data.imageBase64}`
-      annStippleUrlRef.current = stippleUrl
-      loadAnnPhoto(stippleUrl)
+      const grayUrl = await desaturateDataUrl(stippleUrl)
+      annStippleUrlRef.current = grayUrl
+      loadAnnPhoto(grayUrl)
       setAnnUsingStipple(true)
     } catch (e) {
       setAnnStippleError(e.message)
@@ -1041,13 +1069,16 @@ export default function Assets() {
         draw={draw}
         overlayFields={(() => {
           const { w: cw, h: ch } = settings.dims
-          const s  = cw / 1920
+          const s      = cw / 1920
+          const isLand  = cw > ch
+          const isStory = ch > cw * 1.5
+
           if (settings.templateType === 'announcement') {
-            const pw     = Math.round(cw * 0.527)
-            const tx     = Math.round(1013 * s) + Math.round(40 * s)
-            const maxW   = cw - tx - Math.round(60 * s)
-            const nameSz = Math.round(134 * s)
-            const roleSz = Math.round(32 * s)
+            const pw      = Math.round(cw * 0.527)
+            const tx      = Math.round(1013 * s) + Math.round(40 * s)
+            const maxW    = cw - tx - Math.round(60 * s)
+            const nameSz  = Math.round(134 * s)
+            const roleSz  = Math.round(32 * s)
             const labelSz = Math.round(34 * s)
             let ty = Math.round(56 * s)
             const firstY = ty; ty += Math.round(nameSz * 1.05)
@@ -1058,13 +1089,130 @@ export default function Assets() {
             ty += Math.round(labelSz * 1.8)
             const quoteY = ty
             return [
-              { key: 'ann-photo', x: 0, y: 0, w: pw, h: ch, isPhoto: true, onPhotoClick: () => annPhotoInputRef.current?.click() },
-              { key: 'annFirstName', x: tx, y: firstY, w: maxW, h: Math.round(nameSz * 1.1),  value: settings.annFirstName, onChange: v => update('annFirstName', v) },
-              { key: 'annLastName',  x: tx, y: lastY,  w: maxW, h: Math.round(nameSz * 1.2),  value: settings.annLastName,  onChange: v => update('annLastName', v) },
-              { key: 'annRole',      x: tx, y: roleY,  w: maxW, h: Math.round(roleSz * 2.5),  value: settings.annRole,      onChange: v => update('annRole', v) },
-              { key: 'annQuote',     x: tx, y: quoteY, w: maxW, h: ch - quoteY - Math.round(50 * s), value: settings.annQuote, onChange: v => update('annQuote', v), multiline: true },
+              { key: 'ann-photo',    x: 0,   y: 0,       w: pw,   h: ch, isPhoto: true, onPhotoClick: () => annPhotoInputRef.current?.click() },
+              { key: 'annFirstName', x: tx,  y: firstY,  w: maxW, h: Math.round(nameSz * 1.1),  value: settings.annFirstName, onChange: v => update('annFirstName', v) },
+              { key: 'annLastName',  x: tx,  y: lastY,   w: maxW, h: Math.round(nameSz * 1.2),  value: settings.annLastName,  onChange: v => update('annLastName', v) },
+              { key: 'annRole',      x: tx,  y: roleY,   w: maxW, h: Math.round(roleSz * 2.5),  value: settings.annRole,      onChange: v => update('annRole', v) },
+              { key: 'annQuote',     x: tx,  y: quoteY,  w: maxW, h: ch - quoteY - Math.round(50 * s), value: settings.annQuote, onChange: v => update('annQuote', v), multiline: true },
             ]
           }
+
+          if (settings.templateType === 'quote') {
+            const pad    = 40
+            const padY   = isStory ? 240 : 40
+            const innerW = cw - pad * 2
+            const nameSz = 64
+            const dashOff = 62  // approx dash glyph width + gap
+            // Attribution floats below quote; use ~62% of canvas height as rough anchor
+            const attrY  = Math.round(ch * (isStory ? 0.60 : 0.62))
+            const roleY  = attrY + Math.round(nameSz * 1.35)
+            const fields = [
+              { key: 'quote',       x: pad,           y: padY,  w: innerW,             h: attrY - padY - 30, value: settings.quote,       onChange: v => update('quote', v),       multiline: true },
+              { key: 'firstName',   x: pad + dashOff, y: attrY, w: Math.round(cw * 0.13), h: Math.round(nameSz * 1.4), value: settings.firstName,   onChange: v => update('firstName', v) },
+              { key: 'lastName',    x: pad + dashOff + Math.round(cw * 0.13) + 10, y: attrY, w: Math.round(cw * 0.17), h: Math.round(nameSz * 1.4), value: settings.lastName, onChange: v => update('lastName', v) },
+              { key: 'roleCompany', x: pad + dashOff, y: roleY, w: Math.round(cw * 0.4), h: 50, value: settings.roleCompany, onChange: v => update('roleCompany', v) },
+            ]
+            if (settings.showCTA) fields.push({ key: 'ctaText', x: Math.round(cw * 0.6), y: ch - pad - 104, w: Math.round(cw * 0.4) - pad, h: 104, value: settings.ctaText, onChange: v => update('ctaText', v) })
+            return fields
+          }
+
+          if (settings.templateType === 'twitter') {
+            const guideX   = 40
+            const boxPadX  = isLand ? 52 : 64
+            const contentX = guideX + boxPadX
+            const contentW = cw - guideX * 2 - boxPadX * 2
+            const nameSz   = isLand ? 36 : 46
+            const handleSz = isLand ? 24 : 30
+            const avatarSz = Math.round(nameSz * 1.15 + handleSz)
+            const nameX    = contentX + avatarSz + 20
+            // Box is vertically centered; approximate top of author block
+            const authorY  = Math.round(ch * (isStory ? 0.25 : 0.30))
+            const tweetY   = authorY + avatarSz + (isStory ? 48 : 36)
+            return [
+              { key: 'tweetAuthorName',   x: nameX,    y: authorY,                          w: Math.round(cw * 0.2), h: Math.round(nameSz * 1.5),   value: settings.tweetAuthorName,   onChange: v => update('tweetAuthorName', v) },
+              { key: 'tweetAuthorHandle', x: nameX,    y: authorY + Math.round(nameSz * 1.2), w: Math.round(cw * 0.2), h: Math.round(handleSz * 1.5), value: settings.tweetAuthorHandle, onChange: v => update('tweetAuthorHandle', v) },
+              { key: 'tweetText',         x: contentX, y: tweetY,                           w: contentW,             h: Math.round(ch * 0.28),      value: settings.tweetText,         onChange: v => update('tweetText', v), multiline: true },
+              { key: 'tweetDate',         x: contentX, y: tweetY + Math.round(ch * 0.25),   w: Math.round(cw * 0.4), h: Math.round(32 * (isLand ? 1 : 1.3)), value: settings.tweetDate, onChange: v => update('tweetDate', v) },
+            ]
+          }
+
+          if (settings.templateType === 'richquote') {
+            const splitX = Math.round(cw / 2)
+            if (isLand) {
+              const contentX  = settings.richFlip ? splitX : 0
+              const photoX    = settings.richFlip ? 0 : splitX
+              const lockupH   = 203
+              const pad       = 53
+              const nameSz    = 120
+              const nameLH    = Math.round(nameSz * 0.84)
+              let cy = pad
+              const fnY = cy; cy += nameLH + 4
+              const lnY = cy; cy += nameLH + 24
+              const pillH = Math.round(32 * 1.3 + 4)
+              const roleY = cy; cy += pillH + 20
+              const quoteY = Math.round(ch * 0.55)
+              return [
+                { key: 'rich-photo',      x: photoX,          y: 0,      w: splitX,             h: ch - lockupH, isPhoto: true, onPhotoClick: () => richPhotoInputRef.current?.click() },
+                { key: 'richFirstName',   x: contentX + pad,  y: fnY,    w: splitX - pad * 2,   h: nameLH + 8,          value: settings.richFirstName,   onChange: v => update('richFirstName', v) },
+                { key: 'richLastName',    x: contentX + pad,  y: lnY,    w: splitX - pad * 2,   h: nameLH + 8,          value: settings.richLastName,    onChange: v => update('richLastName', v) },
+                { key: 'richRoleCompany', x: contentX + pad,  y: roleY,  w: splitX - pad * 2,   h: Math.round(pillH * 1.2), value: settings.richRoleCompany, onChange: v => update('richRoleCompany', v) },
+                { key: 'richQuoteText',   x: contentX + pad,  y: quoteY, w: splitX - pad * 2,   h: ch - quoteY - pad,   value: settings.richQuoteText,   onChange: v => update('richQuoteText', v), multiline: true },
+              ]
+            }
+            // Portrait / Story
+            const headshotRowH = 540
+            const topPad   = isStory ? 240 : 0
+            const contentH = isStory ? 618 : ch - headshotRowH
+            const contentY = settings.richFlip ? topPad + headshotRowH : topPad
+            const rowY     = settings.richFlip ? topPad : topPad + contentH
+            const pad      = 40
+            const nameSz   = 96
+            const nameLH   = Math.round(nameSz * 0.84)
+            let cy = contentY + pad
+            const fnY = cy; cy += nameLH + 4
+            const lnY = cy; cy += nameLH + 24
+            const pillH = Math.round(32 * 1.3 + 4)
+            const roleY = cy
+            const quoteY = Math.round(contentY + contentH * 0.55)
+            return [
+              { key: 'rich-photo',      x: 0,    y: rowY,  w: splitX,        h: headshotRowH, isPhoto: true, onPhotoClick: () => richPhotoInputRef.current?.click() },
+              { key: 'richFirstName',   x: pad,  y: fnY,   w: cw - pad * 2,  h: nameLH + 8,         value: settings.richFirstName,   onChange: v => update('richFirstName', v) },
+              { key: 'richLastName',    x: pad,  y: lnY,   w: cw - pad * 2,  h: nameLH + 8,         value: settings.richLastName,    onChange: v => update('richLastName', v) },
+              { key: 'richRoleCompany', x: pad,  y: roleY, w: cw - pad * 2,  h: Math.round(pillH * 1.2), value: settings.richRoleCompany, onChange: v => update('richRoleCompany', v) },
+              { key: 'richQuoteText',   x: pad,  y: quoteY, w: cw - pad * 2, h: contentY + contentH - quoteY - pad, value: settings.richQuoteText, onChange: v => update('richQuoteText', v), multiline: true },
+            ]
+          }
+
+          if (settings.templateType === 'titlecard') {
+            const guideX  = 40
+            const logoH   = isStory ? 80 : 56
+            const logoPadT = isStory ? 360 : guideX
+            const ctaH    = 104
+            const ctaPadB = isStory ? 520 : guideX
+            const ctaTopY = ch - ctaPadB - ctaH
+            const serifSz = isLand ? 148 : 112
+            const sansSz  = isLand ? 144 : 108
+            const subSz   = 40
+            const eyebrowH = Math.round(28 * 1.3 + 16)  // ~52
+            const fullW   = cw - guideX * 2
+            // Approximate: center text group between logo and CTA
+            const zoneTop = logoPadT + logoH
+            const midY    = Math.round((zoneTop + ctaTopY) / 2)
+            const totalApprox = eyebrowH + serifSz + sansSz + subSz + 24 * 3
+            let ty = Math.round(midY - totalApprox / 2)
+            const eyebrowY = ty; ty += eyebrowH + 24
+            const serifY   = ty; ty += serifSz   + 24
+            const sansY    = ty; ty += sansSz    + 24
+            const subY     = ty
+            const fields = []
+            if (settings.tcShowEyebrow)     fields.push({ key: 'tcEyebrow',     x: guideX, y: eyebrowY, w: fullW, h: eyebrowH + 16, value: settings.tcEyebrow,     onChange: v => update('tcEyebrow', v) })
+            if (settings.tcShowSerifTitle)  fields.push({ key: 'tcSerifTitle',  x: guideX, y: serifY,   w: fullW, h: serifSz + 16,  value: settings.tcSerifTitle,  onChange: v => update('tcSerifTitle', v) })
+            if (settings.tcShowSansTitle)   fields.push({ key: 'tcSansTitle',   x: guideX, y: sansY,    w: fullW, h: sansSz + 16,   value: settings.tcSansTitle,   onChange: v => update('tcSansTitle', v) })
+            if (settings.tcShowSubheadline) fields.push({ key: 'tcSubheadline', x: guideX, y: subY,     w: fullW, h: subSz + 16,    value: settings.tcSubheadline, onChange: v => update('tcSubheadline', v) })
+            if (settings.tcShowCTA)         fields.push({ key: 'tcCTAText',     x: guideX, y: ctaTopY,  w: fullW, h: ctaH,          value: settings.tcCTAText,     onChange: v => update('tcCTAText', v) })
+            return fields
+          }
+
           return null
         })()}
       />
