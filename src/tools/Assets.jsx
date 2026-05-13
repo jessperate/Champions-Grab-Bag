@@ -77,12 +77,17 @@ function desaturateDataUrl(dataUrl) {
       c.width = img.width
       c.height = img.height
       const cx = c.getContext('2d')
+      // Flatten onto opaque white first — Gemini can return PNGs with alpha,
+      // and we want a guaranteed white background under the stipple.
+      cx.fillStyle = '#ffffff'
+      cx.fillRect(0, 0, c.width, c.height)
       cx.drawImage(img, 0, 0)
       const id = cx.getImageData(0, 0, c.width, c.height)
       const d = id.data
       for (let i = 0; i < d.length; i += 4) {
         const y = 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]
         d[i] = d[i + 1] = d[i + 2] = y
+        d[i + 3] = 255
       }
       cx.putImageData(id, 0, 0)
       resolve(c.toDataURL('image/png'))
