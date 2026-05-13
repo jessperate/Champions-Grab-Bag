@@ -1,23 +1,22 @@
 import { MODES, buildLockup, wrapText, smartQuotes } from './drawCanvas.js'
 
-// ── Draw photo region: darkest brand color per colorway (M.ctaText) + blend
-// Stipple images (black-on-white) use multiply so white bg disappears into panel bg
+// ── Draw photo region: stipple sits on white, plain photos on M.ctaText panel
 function drawPhotoSection(ctx, profileImage, x, y, w, h, M, isStipple) {
-  ctx.fillStyle = M.ctaText
+  ctx.fillStyle = isStipple ? '#ffffff' : M.ctaText
   ctx.fillRect(x, y, w, h)
 
   if (!profileImage) {
     // Upload placeholder
     ctx.save()
     ctx.setLineDash([6, 6])
-    ctx.strokeStyle = '#ffffff'
+    ctx.strokeStyle = isStipple ? '#002910' : '#ffffff'
     ctx.globalAlpha = 0.3
     ctx.lineWidth   = 2
     const inset = Math.round(w * 0.1)
     ctx.strokeRect(x + inset, y + Math.round(h * 0.1), w - inset * 2, Math.round(h * 0.8))
     ctx.setLineDash([])
     ctx.font         = `400 ${Math.round(w * 0.06)}px sans-serif`
-    ctx.fillStyle    = '#ffffff'
+    ctx.fillStyle    = isStipple ? '#002910' : '#ffffff'
     ctx.globalAlpha  = 0.45
     ctx.textAlign    = 'center'
     ctx.textBaseline = 'middle'
@@ -36,7 +35,7 @@ function drawPhotoSection(ctx, profileImage, x, y, w, h, M, isStipple) {
   ctx.beginPath()
   ctx.rect(x, y, w, h)
   ctx.clip()
-  ctx.globalCompositeOperation = isStipple ? 'multiply' : 'hard-light'
+  if (!isStipple) ctx.globalCompositeOperation = 'hard-light'
   ctx.drawImage(profileImage, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih)
   ctx.globalCompositeOperation = 'source-over'
   ctx.restore()
